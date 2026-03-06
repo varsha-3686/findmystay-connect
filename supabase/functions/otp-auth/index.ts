@@ -10,6 +10,15 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function normalizeContact(raw: string): string {
+  const value = raw.trim();
+  return value.includes("@") ? value.toLowerCase() : value.replace(/\s+/g, "");
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,9 +32,17 @@ Deno.serve(async (req) => {
     const { action, contact, otp, role, full_name } = await req.json();
 
     if (action === "send") {
-      if (!contact) {
+      if (!contact || typeof contact !== "string") {
         return new Response(
           JSON.stringify({ error: "Contact (email) is required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const normalizedContact = normalizeContact(contact);
+      if (!isValidEmail(normalizedContact)) {
+        return new Response(
+          JSON.stringify({ error: "Please enter a valid email address." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -35,7 +52,7 @@ Deno.serve(async (req) => {
       const { count } = await supabase
         .from("otp_codes")
         .select("*", { count: "exact", head: true })
-        .eq("contact", contact)
+        .eq("contact", normalizedContact)
         .gte("created_at", tenMinAgo);
 
       if ((count ?? 0) >= 5) {
@@ -45,29 +62,39 @@ Deno.serve(async (req) => {
         );
       }
 
-      const otpCode = generateOTP();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      // Keep only one active OTP per contact
+      await supabase
+        .from("otp_codes")
+        .delete()
+        .eq("contact", normalizedContact)
+        .eq("verified", false);
 
-      // For test accounts, use fixed OTP 123456
-      const testEmails = [
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+      const generatedOtp = generateOTP();
+
+      const testEmails = new Set([
         "rahul@studenttest.com",
         "ananya@worktest.com",
         "ramesh@hostelowner.com",
         "suresh@pgowner.com",
-      ];
-      const finalOtp = testEmails.includes(contact.toLowerCase()) ? "123456" : otpCode;
+      ]);
+      const finalOtp = testEmails.has(normalizedContact) ? "123456" : generatedOtp;
 
-      // Store OTP
-      await supabase.from("otp_codes").insert({
-        contact,
+      const { error: otpInsertError } = await supabase.from("otp_codes").insert({
+        contact: normalizedContact,
         otp_code: finalOtp,
         expires_at: expiresAt,
       });
 
-      // Send OTP via Supabase Auth magic link / OTP email
-      // We use Supabase's built-in email sending via signInWithOtp
+      if (otpInsertError) {
+        return new Response(
+          JSON.stringify({ error: "Failed to generate OTP. Please try again." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { error: authError } = await supabase.auth.signInWithOtp({
-        email: contact,
+        email: normalizedContact,
         options: {
           shouldCreateUser: true,
           data: { full_name: full_name || "", role: role || "user" },
@@ -75,13 +102,19 @@ Deno.serve(async (req) => {
       });
 
       if (authError) {
-        console.error("Auth OTP error:", authError);
-        // Still return success if our custom OTP was stored
-        // The edge function OTP is the primary mechanism
+        await supabase
+          .from("otp_codes")
+          .delete()
+          .eq("contact", normalizedContact)
+          .eq("verified", false);
+
+        return new Response(
+          JSON.stringify({ error: authError.message || "Failed to send OTP email." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
-      // For development/demo: log the OTP (remove in production)
-      console.log(`OTP for ${contact}: ${otpCode}`);
+      console.log(`OTP generated for ${normalizedContact}`);
 
       return new Response(
         JSON.stringify({ success: true, message: "OTP sent to your email" }),
@@ -90,22 +123,24 @@ Deno.serve(async (req) => {
     }
 
     if (action === "verify") {
-      if (!contact || !otp) {
+      if (!contact || !otp || typeof contact !== "string" || typeof otp !== "string") {
         return new Response(
           JSON.stringify({ error: "Contact and OTP are required" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      const normalizedContact = normalizeContact(contact);
+
       // Find the latest unverified OTP for this contact
       const { data: otpRecord, error: fetchError } = await supabase
         .from("otp_codes")
         .select("*")
-        .eq("contact", contact)
+        .eq("contact", normalizedContact)
         .eq("verified", false)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (fetchError || !otpRecord) {
         return new Response(
@@ -116,6 +151,7 @@ Deno.serve(async (req) => {
 
       // Check expiration
       if (new Date(otpRecord.expires_at) < new Date()) {
+        await supabase.from("otp_codes").delete().eq("id", otpRecord.id);
         return new Response(
           JSON.stringify({ error: "OTP has expired. Please request a new one." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -130,16 +166,21 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Increment attempts
-      await supabase
-        .from("otp_codes")
-        .update({ attempts: otpRecord.attempts + 1 })
-        .eq("id", otpRecord.id);
-
       // Verify OTP
-      if (otpRecord.otp_code !== otp) {
+      if (otpRecord.otp_code !== otp.trim()) {
+        const nextAttempts = otpRecord.attempts + 1;
+        await supabase
+          .from("otp_codes")
+          .update({ attempts: nextAttempts })
+          .eq("id", otpRecord.id);
+
         return new Response(
-          JSON.stringify({ error: "Invalid OTP. Please try again." }),
+          JSON.stringify({
+            error:
+              nextAttempts >= 5
+                ? "Too many attempts. Please request a new OTP."
+                : "Invalid OTP. Please try again.",
+          }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -153,7 +194,7 @@ Deno.serve(async (req) => {
       // Check if user exists
       const { data: existingUsers } = await supabase.auth.admin.listUsers();
       const existingUser = existingUsers?.users?.find(
-        (u) => u.email === contact
+        (u) => u.email === normalizedContact
       );
 
       let session = null;
@@ -164,7 +205,7 @@ Deno.serve(async (req) => {
         const { data: tokenData, error: tokenError } =
           await supabase.auth.admin.generateLink({
             type: "magiclink",
-            email: contact,
+            email: normalizedContact,
           });
 
         if (tokenError) {
@@ -197,7 +238,7 @@ Deno.serve(async (req) => {
         const tempPassword = crypto.randomUUID();
         const { data: newUser, error: createError } =
           await supabase.auth.admin.createUser({
-            email: contact,
+            email: normalizedContact,
             password: tempPassword,
             email_confirm: true,
             user_metadata: {
@@ -224,7 +265,7 @@ Deno.serve(async (req) => {
         // Generate session for new user
         const { data: tokenData } = await supabase.auth.admin.generateLink({
           type: "magiclink",
-          email: contact,
+          email: normalizedContact,
         });
 
         if (tokenData?.properties?.hashed_token) {
@@ -240,7 +281,7 @@ Deno.serve(async (req) => {
       await supabase
         .from("otp_codes")
         .delete()
-        .eq("contact", contact)
+        .eq("contact", normalizedContact)
         .eq("verified", true);
 
       return new Response(

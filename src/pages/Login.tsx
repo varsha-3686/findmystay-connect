@@ -47,12 +47,13 @@ const Login = () => {
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || submitting) return;
     setSubmitting(true);
 
     try {
       const res = await supabase.functions.invoke("otp-auth", {
-        body: { action: "send", contact: email, role, full_name: fullName },
+        body: { action: "send", contact: normalizedEmail, role, full_name: fullName.trim() },
       });
 
       if (res.error) {
@@ -61,6 +62,7 @@ const Login = () => {
         toast.error(res.data.error);
       } else {
         toast.success("OTP sent to your email!");
+        setEmail(normalizedEmail);
         setStep("otp");
         setCountdown(300); // 5 minutes
       }
@@ -77,7 +79,7 @@ const Login = () => {
 
     try {
       const res = await supabase.functions.invoke("otp-auth", {
-        body: { action: "verify", contact: email, otp, role, full_name: fullName },
+        body: { action: "verify", contact: email.trim().toLowerCase(), otp, role, full_name: fullName.trim() },
       });
 
       if (res.error) {
@@ -107,7 +109,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       const res = await supabase.functions.invoke("otp-auth", {
-        body: { action: "send", contact: email, role, full_name: fullName },
+        body: { action: "send", contact: email.trim().toLowerCase(), role, full_name: fullName.trim() },
       });
       if (res.data?.error) {
         toast.error(res.data.error);
