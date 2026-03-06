@@ -1,1 +1,4 @@
 project_id = "tbpyzxlczopbddvtbbzr"
+
+[functions.fraud-check]
+verify_jwt = false

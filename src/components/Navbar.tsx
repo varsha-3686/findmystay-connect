@@ -35,6 +35,7 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center gap-1">
             <Link to="/listings"><Button variant="ghost" size="sm">Explore</Button></Link>
+            <Link to="/map"><Button variant="ghost" size="sm">Map</Button></Link>
             {(hasRole("owner") || hasRole("admin")) && (
               <Link to="/owner-dashboard"><Button variant="ghost" size="sm">My Properties</Button></Link>
             )}
@@ -95,6 +96,7 @@ const Navbar = () => {
           >
             <div className="p-4 space-y-2">
               <Link to="/listings" className="block py-2.5 px-3 text-sm font-medium rounded-lg hover:bg-secondary" onClick={() => setMobileOpen(false)}>Explore</Link>
+              <Link to="/map" className="block py-2.5 px-3 text-sm font-medium rounded-lg hover:bg-secondary" onClick={() => setMobileOpen(false)}>Map</Link>
               {hasRole("owner") && (
                 <>
                   <Link to="/owner-dashboard" className="block py-2.5 px-3 text-sm font-medium rounded-lg hover:bg-secondary" onClick={() => setMobileOpen(false)}>My Properties</Link>

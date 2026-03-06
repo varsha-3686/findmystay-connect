@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import VerificationSubmit from "./pages/VerificationSubmit";
 import PRPhotoshootRequest from "./pages/PRPhotoshootRequest";
 import SelfVerifyCapture from "./pages/SelfVerifyCapture";
+import MapView from "./pages/MapView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/verify-property" element={<VerificationSubmit />} />
             <Route path="/pr-photoshoot-request" element={<PRPhotoshootRequest />} />
             <Route path="/self-verify-capture" element={<SelfVerifyCapture />} />
+            <Route path="/map" element={<MapView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
