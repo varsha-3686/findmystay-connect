@@ -139,6 +139,53 @@ export type Database = {
           },
         ]
       }
+      fraud_alerts: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          flags: Json
+          hostel_id: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_score: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          flags?: Json
+          hostel_id: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_score?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          flags?: Json
+          hostel_id?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_score?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_alerts_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hostel_images: {
         Row: {
           display_order: number | null

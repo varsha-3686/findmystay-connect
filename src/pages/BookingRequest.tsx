@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, User, Phone, Mail, MessageSquare, Shield, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Phone, Mail, MessageSquare, Shield, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +11,24 @@ import { listings } from "@/data/mockListings";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const BookingRequest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const listing = listings.find((l) => l.id === id);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    moveInDate: "",
+    occupancy: "",
+    message: "",
+  });
 
   if (!listing) {
     return (
@@ -26,10 +38,37 @@ const BookingRequest = () => {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast.success("Booking request submitted!");
+
+    if (!user) {
+      toast.error("Please sign in to submit a booking request");
+      navigate("/login");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("bookings").insert({
+        user_id: user.id,
+        hostel_id: listing.id,
+        full_name: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        move_in_date: formData.moveInDate || null,
+        message: formData.message || null,
+        status: "pending" as any,
+      });
+
+      if (error) throw error;
+
+      setSubmitted(true);
+      toast.success("Booking request submitted!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit booking");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -63,7 +102,6 @@ const BookingRequest = () => {
           </Link>
 
           <div className="grid lg:grid-cols-5 gap-8">
-            {/* Form */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="lg:col-span-3">
               <h1 className="font-heading font-bold text-2xl mb-1">Request Booking</h1>
               <p className="text-muted-foreground text-sm mb-8">Fill in your details to send a booking request</p>
@@ -74,14 +112,14 @@ const BookingRequest = () => {
                     <Label className="text-sm font-medium">Full Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input placeholder="Your full name" className="pl-10 h-11 rounded-xl" required />
+                      <Input placeholder="Your full name" className="pl-10 h-11 rounded-xl" required value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Phone Number</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input placeholder="+91 XXXXX XXXXX" className="pl-10 h-11 rounded-xl" required />
+                      <Input placeholder="+91 XXXXX XXXXX" className="pl-10 h-11 rounded-xl" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                     </div>
                   </div>
                 </div>
@@ -90,7 +128,7 @@ const BookingRequest = () => {
                   <Label className="text-sm font-medium">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input type="email" placeholder="you@example.com" className="pl-10 h-11 rounded-xl" required />
+                    <Input type="email" placeholder="you@example.com" className="pl-10 h-11 rounded-xl" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                   </div>
                 </div>
 
@@ -99,12 +137,12 @@ const BookingRequest = () => {
                     <Label className="text-sm font-medium">Move-in Date</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input type="date" className="pl-10 h-11 rounded-xl" required />
+                      <Input type="date" className="pl-10 h-11 rounded-xl" required value={formData.moveInDate} onChange={(e) => setFormData({ ...formData, moveInDate: e.target.value })} />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Occupancy</Label>
-                    <Select>
+                    <Select value={formData.occupancy} onValueChange={(v) => setFormData({ ...formData, occupancy: v })}>
                       <SelectTrigger className="h-11 rounded-xl">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
@@ -121,12 +159,12 @@ const BookingRequest = () => {
                   <Label className="text-sm font-medium">Message (Optional)</Label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Textarea placeholder="Any specific requirements or questions..." className="pl-10 rounded-xl min-h-[100px] resize-none" />
+                    <Textarea placeholder="Any specific requirements or questions..." className="pl-10 rounded-xl min-h-[100px] resize-none" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} />
                   </div>
                 </div>
 
-                <Button type="submit" variant="hero" size="lg" className="w-full">
-                  Submit Booking Request
+                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
+                  {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Submitting...</> : "Submit Booking Request"}
                 </Button>
 
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -136,7 +174,6 @@ const BookingRequest = () => {
               </form>
             </motion.div>
 
-            {/* Summary */}
             <div className="lg:col-span-2">
               <div className="sticky top-28 bg-card rounded-2xl border border-border/50 overflow-hidden shadow-card">
                 <img src={listing.image} alt={listing.title} className="w-full aspect-video object-cover" />

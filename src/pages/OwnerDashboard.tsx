@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import OwnerBookingManager from "@/components/OwnerBookingManager";
 import { listings } from "@/data/mockListings";
 import { motion } from "framer-motion";
 
@@ -12,12 +13,6 @@ const stats = [
   { label: "Booking Requests", value: "38", change: "+5%", icon: MessageSquare, color: "text-accent" },
   { label: "Avg. Rating", value: "4.7", change: "+0.2", icon: Star, color: "text-verified" },
   { label: "Revenue", value: "₹1.2L", change: "+18%", icon: IndianRupee, color: "text-accent" },
-];
-
-const bookingRequests = [
-  { name: "Amit Kumar", property: "Sunrise Co-Living", date: "Today", status: "pending" },
-  { name: "Sneha P.", property: "Sunrise Co-Living", date: "Yesterday", status: "approved" },
-  { name: "Rahul V.", property: "Elite PG", date: "2 days ago", status: "pending" },
 ];
 
 const OwnerDashboard = () => {
@@ -143,37 +138,9 @@ const OwnerDashboard = () => {
               </div>
             </div>
 
-            {/* Recent Requests */}
+            {/* Booking Manager */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading font-semibold text-lg">Booking Requests</h2>
-                <Button variant="ghost" size="sm">View All</Button>
-              </div>
-              <div className="space-y-3">
-                {bookingRequests.map((req, i) => (
-                  <motion.div
-                    key={req.name}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    className="p-4 bg-card rounded-2xl border border-border/50 shadow-card"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center font-heading font-bold text-primary text-xs">{req.name[0]}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-heading font-semibold text-sm truncate">{req.name}</p>
-                        <p className="text-muted-foreground text-xs">{req.property}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">{req.date}</span>
-                      <Badge className={req.status === "approved" ? "bg-accent text-accent-foreground" : "bg-verified/10 text-verified"}>
-                        {req.status}
-                      </Badge>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <OwnerBookingManager />
             </div>
           </div>
         </div>
