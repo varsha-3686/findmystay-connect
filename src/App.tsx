@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
 import AdminLogin from "./pages/AdminLogin";
+import OwnerLogin from "./pages/OwnerLogin";
 import Listings from "./pages/Listings";
 import ListingDetail from "./pages/ListingDetail";
 import BookingRequest from "./pages/BookingRequest";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/owner-login" element={<OwnerLogin />} />
             <Route path="/listings" element={<Listings />} />
             <Route path="/listing/:id" element={<ListingDetail />} />
             <Route path="/booking/:id" element={<BookingRequest />} />

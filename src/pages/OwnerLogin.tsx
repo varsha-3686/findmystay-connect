@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Building2, Mail, ArrowRight, ShieldCheck, User } from "lucide-react";
+import { Building2, Mail, ArrowRight, ShieldCheck, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import OTPInput from "@/components/auth/OTPInput";
 
 type AuthStep = "contact" | "otp";
 
-const Login = () => {
+const OwnerLogin = () => {
   const [step, setStep] = useState<AuthStep>("contact");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -49,7 +49,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       const res = await supabase.functions.invoke("otp-auth", {
-        body: { action: "send", contact: normalizedEmail, role: "user", full_name: fullName.trim() },
+        body: { action: "send", contact: normalizedEmail, role: "owner", full_name: fullName.trim() },
       });
       if (res.error) {
         toast.error(res.data?.error || res.error.message || "Failed to send OTP");
@@ -73,7 +73,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       const res = await supabase.functions.invoke("otp-auth", {
-        body: { action: "verify", contact: email.trim().toLowerCase(), otp, role: "user", full_name: fullName.trim() },
+        body: { action: "verify", contact: email.trim().toLowerCase(), otp, role: "owner", full_name: fullName.trim() },
       });
       if (res.error) {
         toast.error("Verification failed");
@@ -100,7 +100,7 @@ const Login = () => {
     setSubmitting(true);
     try {
       const res = await supabase.functions.invoke("otp-auth", {
-        body: { action: "send", contact: email.trim().toLowerCase(), role: "user", full_name: fullName.trim() },
+        body: { action: "send", contact: email.trim().toLowerCase(), role: "owner", full_name: fullName.trim() },
       });
       if (res.data?.error) toast.error(res.data.error);
       else { toast.success("OTP resent!"); setCountdown(300); }
@@ -112,24 +112,24 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left decorative */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-hero relative items-center justify-center p-12">
-        <div className="absolute top-1/4 -left-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-20 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
+      {/* Left decorative - owner themed */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-accent/90 to-primary/70 relative items-center justify-center p-12">
+        <div className="absolute top-1/4 -left-20 w-64 h-64 bg-accent/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
         <div className="relative z-10 text-center max-w-md">
           <div className="flex items-center justify-center gap-2.5 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
-              <Building2 className="w-6 h-6 text-primary-foreground" />
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+              <Home className="w-6 h-6 text-white" />
             </div>
-            <span className="font-heading font-extrabold text-3xl text-primary-foreground">StayNest</span>
+            <span className="font-heading font-extrabold text-3xl text-white">StayNest</span>
           </div>
-          <h2 className="font-heading font-bold text-3xl text-primary-foreground mb-4">Find Your Perfect Stay</h2>
-          <p className="text-primary-foreground/50 leading-relaxed">
-            Sign in to search hostels, book rooms, and manage your accommodation — all with a simple OTP.
+          <h2 className="font-heading font-bold text-3xl text-white mb-4">Property Owner Portal</h2>
+          <p className="text-white/60 leading-relaxed">
+            Manage your hostel listings, track bookings, and grow your property business — all from one place.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-2 text-primary-foreground/40">
+          <div className="mt-8 flex items-center justify-center gap-2 text-white/40">
             <ShieldCheck className="w-5 h-5" />
-            <span className="text-sm">256-bit encrypted • 5 min expiry • Rate limited</span>
+            <span className="text-sm">Verified Owners • Secure Access • Business Tools</span>
           </div>
         </div>
       </div>
@@ -145,17 +145,17 @@ const Login = () => {
           </Link>
 
           {/* Role badge */}
-          <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-            <User className="w-4 h-4" />
-            Student / Employee Login
+          <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 text-accent-foreground text-sm font-medium border border-accent/20">
+            <Home className="w-4 h-4" />
+            Property Owner Login
           </div>
 
           <AnimatePresence mode="wait">
             {step === "contact" && (
               <motion.div key="contact" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                 <div>
-                  <h1 className="font-heading font-bold text-2xl mb-1">Welcome to StayNest</h1>
-                  <p className="text-muted-foreground text-sm">Enter your details to receive a verification code</p>
+                  <h1 className="font-heading font-bold text-2xl mb-1">Owner Login</h1>
+                  <p className="text-muted-foreground text-sm">Sign in to manage your hostel listings and bookings</p>
                 </div>
 
                 <form onSubmit={handleSendOTP} className="space-y-4">
@@ -167,7 +167,7 @@ const Login = () => {
                     <Label className="text-sm font-medium">Email Address</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input type="email" placeholder="you@example.com" className="pl-10 h-11 rounded-xl" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                      <Input type="email" placeholder="owner@example.com" className="pl-10 h-11 rounded-xl" required value={email} onChange={(e) => setEmail(e.target.value)} />
                     </div>
                   </div>
                   <Button type="submit" variant="hero" size="lg" className="w-full gap-2" disabled={submitting}>
@@ -177,8 +177,8 @@ const Login = () => {
                 </form>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Are you a hostel owner?{" "}
-                  <Link to="/owner-login" className="text-primary hover:underline font-medium">Login here</Link>
+                  Looking for accommodation?{" "}
+                  <Link to="/login" className="text-primary hover:underline font-medium">Student / Employee Login</Link>
                 </p>
               </motion.div>
             )}
@@ -217,4 +217,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default OwnerLogin;
