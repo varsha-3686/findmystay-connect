@@ -71,6 +71,7 @@ const AdminDashboard = () => {
       <Routes>
         <Route index element={<AdminAnalytics />} />
         <Route path="activity" element={<AdminActivityMonitor />} />
+        <Route path="owner-verification" element={<AdminOwnerVerification />} />
         <Route path="approvals" element={<AdminHostelApprovals />} />
         <Route path="users" element={<AdminUserManagement />} />
         <Route path="fraud" element={<AdminFraudAlerts />} />

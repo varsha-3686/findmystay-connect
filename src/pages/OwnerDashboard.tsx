@@ -38,7 +38,10 @@ const OwnerDashboard = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (!authLoading && rolesLoaded && !user) navigate("/login");
+    if (!authLoading && rolesLoaded) {
+      if (!user) navigate("/login");
+      else if (hasRole("owner_pending" as any)) navigate("/owner-verification-pending");
+    }
   }, [user, authLoading, rolesLoaded]);
 
   if (authLoading || !rolesLoaded) {

@@ -53,6 +53,7 @@ const App = () => (
             <Route path="/verify-property" element={<VerificationSubmit />} />
             <Route path="/pr-photoshoot-request" element={<PRPhotoshootRequest />} />
             <Route path="/self-verify-capture" element={<SelfVerifyCapture />} />
+            <Route path="/owner-verification-pending" element={<OwnerVerificationPending />} />
             <Route path="/map" element={<MapView />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
