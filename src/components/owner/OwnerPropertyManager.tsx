@@ -189,32 +189,12 @@ const OwnerPropertyManager = () => {
           {/* Expanded */}
           {expandedId === hostel.id && (
             <div className="px-5 pb-5 space-y-5 border-t border-border/50 pt-4">
-              {/* Photos */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-heading font-semibold text-xs flex items-center gap-1.5"><Image className="w-3.5 h-3.5 text-primary" /> Photos</h4>
-                  <label className="cursor-pointer">
-                    <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs" asChild>
-                      <span>{uploading === hostel.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload</span>
-                    </Button>
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && handleUploadPhoto(hostel.id, e.target.files)} />
-                  </label>
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {hostel.images.map(img => (
-                    <div key={img.id} className="relative shrink-0 w-24 h-20 rounded-xl overflow-hidden border border-border group">
-                      <img src={img.image_url} alt="" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => handleDeletePhoto(img.id)}
-                        className="absolute top-1 right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3 text-destructive-foreground" />
-                      </button>
-                    </div>
-                  ))}
-                  {hostel.images.length === 0 && <p className="text-xs text-muted-foreground">No photos uploaded</p>}
-                </div>
-              </div>
+              <MediaGalleryManager
+                hostelId={hostel.id}
+                images={hostel.images}
+                videos={hostel.videos}
+                onRefresh={fetchHostels}
+              />
 
               {/* Rooms */}
               <div>
