@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import UserHome from "@/components/user/UserHome";
+import ReferAndEarn from "@/components/user/ReferAndEarn";
 import UserSearch from "@/components/user/UserSearch";
 import UserSaved from "@/components/user/UserSaved";
 import UserBookings from "@/components/user/UserBookings";
