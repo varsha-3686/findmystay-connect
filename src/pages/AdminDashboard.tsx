@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import {
   BarChart3, BadgeCheck, Users, AlertTriangle,
-  MessageSquare, Building2, ShieldCheck, MessageSquareWarning, Activity
+  MessageSquare, Building2, ShieldCheck, MessageSquareWarning, Activity, ShirtIcon
 } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import AdminAnalytics from "@/components/admin/AdminAnalytics";
@@ -14,6 +14,7 @@ import AdminHostelApprovals from "@/components/admin/AdminHostelApprovals";
 import AdminComplaints from "@/components/admin/AdminComplaints";
 import AdminActivityMonitor from "@/components/admin/AdminActivityMonitor";
 import AdminOwnerVerification from "@/components/admin/AdminOwnerVerification";
+import AdminLaundry from "@/components/admin/AdminLaundry";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -36,6 +37,7 @@ const sidebarGroups = [
       { title: "Reviews", url: "/admin/reviews", icon: MessageSquare },
       { title: "Media Verification", url: "/admin/media", icon: Building2 },
       { title: "Complaints", url: "/admin/complaints", icon: MessageSquareWarning },
+      { title: "Laundry", url: "/admin/laundry", icon: ShirtIcon },
     ],
   },
 ];
@@ -78,6 +80,7 @@ const AdminDashboard = () => {
         <Route path="reviews" element={<AdminReviewModeration />} />
         <Route path="media" element={<AdminMediaVerification />} />
         <Route path="complaints" element={<AdminComplaints />} />
+        <Route path="laundry" element={<AdminLaundry />} />
       </Routes>
     </DashboardLayout>
   );

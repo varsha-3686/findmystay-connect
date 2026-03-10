@@ -322,6 +322,163 @@ export type Database = {
         }
         Relationships: []
       }
+      laundry_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          price: number
+          quantity: number
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          price?: number
+          quantity?: number
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          price?: number
+          quantity?: number
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laundry_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "laundry_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laundry_order_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "laundry_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laundry_orders: {
+        Row: {
+          created_at: string
+          delivery_time: string | null
+          hostel_id: string | null
+          id: string
+          notes: string | null
+          pickup_time: string | null
+          status: Database["public"]["Enums"]["laundry_order_status"]
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_time?: string | null
+          hostel_id?: string | null
+          id?: string
+          notes?: string | null
+          pickup_time?: string | null
+          status?: Database["public"]["Enums"]["laundry_order_status"]
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_time?: string | null
+          hostel_id?: string | null
+          id?: string
+          notes?: string | null
+          pickup_time?: string | null
+          status?: Database["public"]["Enums"]["laundry_order_status"]
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laundry_orders_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laundry_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          order_id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laundry_ratings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "laundry_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laundry_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media_verification_requests: {
         Row: {
           admin_notes: string | null
@@ -770,6 +927,13 @@ export type Database = {
         | "rejected"
         | "cancelled"
         | "completed"
+      laundry_order_status:
+        | "order_placed"
+        | "pickup_scheduled"
+        | "in_progress"
+        | "out_for_delivery"
+        | "delivered"
+        | "cancelled"
       media_verification_status:
         | "pending"
         | "scheduled"
@@ -915,6 +1079,14 @@ export const Constants = {
         "rejected",
         "cancelled",
         "completed",
+      ],
+      laundry_order_status: [
+        "order_placed",
+        "pickup_scheduled",
+        "in_progress",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
       ],
       media_verification_status: [
         "pending",
