@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, Image, IndianRupee, Bed, Upload, Loader2, X, Plus, Trash2, Save, Edit2 } from "lucide-react";
+import { Building2, Bed, Loader2, Plus, Trash2, Save, Edit2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import MediaGalleryManager from "./MediaGalleryManager";
+
+interface MediaItem {
+  id: string;
+  url: string;
+  uploaded_by: string;
+  display_order: number | null;
+}
 
 interface HostelWithRooms {
   id: string;
@@ -20,7 +28,8 @@ interface HostelWithRooms {
   verified_status: string;
   is_active: boolean;
   rooms: { id: string; sharing_type: string; price_per_month: number; total_beds: number; available_beds: number }[];
-  images: { id: string; image_url: string; display_order: number | null }[];
+  images: MediaItem[];
+  videos: MediaItem[];
 }
 
 const OwnerPropertyManager = () => {
@@ -30,7 +39,6 @@ const OwnerPropertyManager = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [editRoom, setEditRoom] = useState<Record<string, any>>({});
-  const [uploading, setUploading] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) fetchHostels();
@@ -46,11 +54,14 @@ const OwnerPropertyManager = () => {
     if (data) {
       const enriched: HostelWithRooms[] = [];
       for (const h of data) {
-        const [roomsRes, imagesRes] = await Promise.all([
+        const [roomsRes, imagesRes, videosRes] = await Promise.all([
           supabase.from("rooms").select("*").eq("hostel_id", h.id).order("sharing_type"),
           supabase.from("hostel_images").select("*").eq("hostel_id", h.id).order("display_order"),
+          (supabase.from("hostel_videos") as any).select("*").eq("hostel_id", h.id).order("display_order"),
         ]);
-        enriched.push({ ...h, rooms: roomsRes.data || [], images: imagesRes.data || [] });
+        const images = (imagesRes.data || []).map((img: any) => ({ id: img.id, url: img.image_url, uploaded_by: img.uploaded_by || "owner", display_order: img.display_order }));
+        const videos = (videosRes.data || []).map((vid: any) => ({ id: vid.id, url: vid.video_url, uploaded_by: vid.uploaded_by || "owner", display_order: vid.display_order }));
+        enriched.push({ ...h, rooms: roomsRes.data || [], images, videos });
       }
       setHostels(enriched);
     }
@@ -94,29 +105,6 @@ const OwnerPropertyManager = () => {
     setSaving(null);
   };
 
-  const handleUploadPhoto = async (hostelId: string, files: FileList) => {
-    setUploading(hostelId);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const filePath = `${hostelId}/${Date.now()}-${i}.${file.name.split('.').pop()}`;
-        const { error: uploadErr } = await supabase.storage.from("hostel-images").upload(filePath, file);
-        if (!uploadErr) {
-          const { data: publicUrl } = supabase.storage.from("hostel-images").getPublicUrl(filePath);
-          await supabase.from("hostel_images").insert({ hostel_id: hostelId, image_url: publicUrl.publicUrl, display_order: i });
-        }
-      }
-      toast.success("Photos uploaded");
-      fetchHostels();
-    } catch (err: any) { toast.error(err.message); }
-    setUploading(null);
-  };
-
-  const handleDeletePhoto = async (imageId: string) => {
-    await supabase.from("hostel_images").delete().eq("id", imageId);
-    toast.success("Photo removed");
-    fetchHostels();
-  };
 
   if (loading) {
     return (
@@ -169,39 +157,19 @@ const OwnerPropertyManager = () => {
             </div>
             <div className="text-right shrink-0">
               <p className="font-heading font-bold text-sm text-primary">₹{hostel.price_min.toLocaleString()} - ₹{hostel.price_max.toLocaleString()}</p>
-              <p className="text-muted-foreground text-xs">{hostel.rooms.length} room types · {hostel.images.length} photos</p>
+              <p className="text-muted-foreground text-xs">{hostel.rooms.length} room types · {hostel.images.length} photos · {hostel.videos.length} videos</p>
             </div>
           </button>
 
           {/* Expanded */}
           {expandedId === hostel.id && (
             <div className="px-5 pb-5 space-y-5 border-t border-border/50 pt-4">
-              {/* Photos */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-heading font-semibold text-xs flex items-center gap-1.5"><Image className="w-3.5 h-3.5 text-primary" /> Photos</h4>
-                  <label className="cursor-pointer">
-                    <Button variant="outline" size="sm" className="gap-1 rounded-xl text-xs" asChild>
-                      <span>{uploading === hostel.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload</span>
-                    </Button>
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={e => e.target.files && handleUploadPhoto(hostel.id, e.target.files)} />
-                  </label>
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {hostel.images.map(img => (
-                    <div key={img.id} className="relative shrink-0 w-24 h-20 rounded-xl overflow-hidden border border-border group">
-                      <img src={img.image_url} alt="" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => handleDeletePhoto(img.id)}
-                        className="absolute top-1 right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3 text-destructive-foreground" />
-                      </button>
-                    </div>
-                  ))}
-                  {hostel.images.length === 0 && <p className="text-xs text-muted-foreground">No photos uploaded</p>}
-                </div>
-              </div>
+              <MediaGalleryManager
+                hostelId={hostel.id}
+                images={hostel.images}
+                videos={hostel.videos}
+                onRefresh={fetchHostels}
+              />
 
               {/* Rooms */}
               <div>

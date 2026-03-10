@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Star, MapPin, BadgeCheck, Heart, Share2, Shield, Calendar, IndianRupee, Users, Wifi, Wind, UtensilsCrossed, Dumbbell, Car, Zap, Waves, Home, ChevronLeft, ChevronRight, X } from "lucide-react";
 import VerificationBadge from "@/components/VerificationBadge";
+import PropertyMediaGallery from "@/components/PropertyMediaGallery";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -8,9 +9,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { listings } from "@/data/mockListings";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const amenityIconMap: Record<string, React.ReactNode> = {
   WiFi: <Wifi className="w-5 h-5" />,
@@ -40,6 +42,22 @@ const ListingDetail = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [dbPhotos, setDbPhotos] = useState<{ id: string; url: string; uploaded_by: string; type: "photo" }[]>([]);
+  const [dbVideos, setDbVideos] = useState<{ id: string; url: string; uploaded_by: string; type: "video" }[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    // Fetch DB media for this hostel
+    const fetchMedia = async () => {
+      const [imgRes, vidRes] = await Promise.all([
+        supabase.from("hostel_images").select("*").eq("hostel_id", id).order("display_order"),
+        (supabase.from("hostel_videos") as any).select("*").eq("hostel_id", id).order("display_order"),
+      ]);
+      setDbPhotos((imgRes.data || []).map((i: any) => ({ id: i.id, url: i.image_url, uploaded_by: i.uploaded_by || "owner", type: "photo" as const })));
+      setDbVideos((vidRes.data || []).map((v: any) => ({ id: v.id, url: v.video_url, uploaded_by: v.uploaded_by || "owner", type: "video" as const })));
+    };
+    fetchMedia();
+  }, [id]);
 
   if (!listing) {
     return (
@@ -115,6 +133,17 @@ const ListingDetail = () => {
               ))}
             </div>
           </motion.div>
+
+          {/* Property Media Gallery (DB media with videos) */}
+          {(dbPhotos.length > 0 || dbVideos.length > 0) && (
+            <div className="mb-8">
+              <PropertyMediaGallery
+                photos={dbPhotos}
+                videos={dbVideos}
+                title={listing.title}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Details */}
