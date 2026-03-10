@@ -134,7 +134,17 @@ const ListingDetail = () => {
             </div>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Property Media Gallery (DB media with videos) */}
+          {(dbPhotos.length > 0 || dbVideos.length > 0) && (
+            <div className="mb-8">
+              <PropertyMediaGallery
+                photos={dbPhotos}
+                videos={dbVideos}
+                title={listing.title}
+              />
+            </div>
+          )}
+
             {/* Details */}
             <div className="lg:col-span-2 space-y-8">
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
