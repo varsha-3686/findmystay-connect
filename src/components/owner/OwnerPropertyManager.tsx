@@ -106,29 +106,6 @@ const OwnerPropertyManager = () => {
     setSaving(null);
   };
 
-  const handleUploadPhoto = async (hostelId: string, files: FileList) => {
-    setUploading(hostelId);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const filePath = `${hostelId}/${Date.now()}-${i}.${file.name.split('.').pop()}`;
-        const { error: uploadErr } = await supabase.storage.from("hostel-images").upload(filePath, file);
-        if (!uploadErr) {
-          const { data: publicUrl } = supabase.storage.from("hostel-images").getPublicUrl(filePath);
-          await supabase.from("hostel_images").insert({ hostel_id: hostelId, image_url: publicUrl.publicUrl, display_order: i });
-        }
-      }
-      toast.success("Photos uploaded");
-      fetchHostels();
-    } catch (err: any) { toast.error(err.message); }
-    setUploading(null);
-  };
-
-  const handleDeletePhoto = async (imageId: string) => {
-    await supabase.from("hostel_images").delete().eq("id", imageId);
-    toast.success("Photo removed");
-    fetchHostels();
-  };
 
   if (loading) {
     return (
