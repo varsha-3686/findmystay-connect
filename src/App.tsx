@@ -20,6 +20,7 @@ import VerificationSubmit from "./pages/VerificationSubmit";
 import PRPhotoshootRequest from "./pages/PRPhotoshootRequest";
 import SelfVerifyCapture from "./pages/SelfVerifyCapture";
 import MapView from "./pages/MapView";
+import OwnerVerificationPending from "./pages/OwnerVerificationPending";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
