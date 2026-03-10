@@ -479,6 +479,33 @@ export type Database = {
         }
         Relationships: []
       }
+      lifestyle_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          points_awarded: number
+          redirect_url: string
+          service_name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          redirect_url: string
+          service_name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_awarded?: number
+          redirect_url?: string
+          service_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       media_verification_requests: {
         Row: {
           admin_notes: string | null
@@ -613,6 +640,36 @@ export type Database = {
           property_location?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_points: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_points?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_points?: number
+          status?: string
         }
         Relationships: []
       }
@@ -807,6 +864,30 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_wallet: {
+        Row: {
+          cash_value: number
+          id: string
+          reward_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cash_value?: number
+          id?: string
+          reward_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cash_value?: number
+          id?: string
+          reward_points?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
