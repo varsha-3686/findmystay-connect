@@ -39,7 +39,6 @@ const OwnerPropertyManager = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [editRoom, setEditRoom] = useState<Record<string, any>>({});
-  const [uploading, setUploading] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) fetchHostels();
