@@ -17,6 +17,8 @@ interface ServiceItem {
 const services: ServiceItem[] = [
   { name: "Swiggy", url: "https://www.swiggy.com", category: "Food", points: 5, emoji: "🍕" },
   { name: "Zomato", url: "https://www.zomato.com", category: "Food", points: 5, emoji: "🍔" },
+  { name: "Rapido", url: "https://rapido.bike", category: "Transportation", points: 6, emoji: "🏍️" },
+  { name: "Ola", url: "https://www.olacabs.com", category: "Transportation", points: 6, emoji: "🚕" },
   { name: "AbhiBus", url: "https://www.abhibus.com", category: "Travel", points: 8, emoji: "🚌" },
   { name: "RedBus", url: "https://www.redbus.in", category: "Travel", points: 8, emoji: "🚎" },
   { name: "BookMyShow", url: "https://in.bookmyshow.com", category: "Entertainment", points: 5, emoji: "🎬" },
