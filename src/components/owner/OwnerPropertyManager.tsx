@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, Image, IndianRupee, Bed, Upload, Loader2, X, Plus, Trash2, Save, Edit2 } from "lucide-react";
+import { Building2, Bed, Loader2, Plus, Trash2, Save, Edit2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import MediaGalleryManager from "./MediaGalleryManager";
+
+interface MediaItem {
+  id: string;
+  url: string;
+  uploaded_by: string;
+  display_order: number | null;
+}
 
 interface HostelWithRooms {
   id: string;
@@ -20,7 +28,8 @@ interface HostelWithRooms {
   verified_status: string;
   is_active: boolean;
   rooms: { id: string; sharing_type: string; price_per_month: number; total_beds: number; available_beds: number }[];
-  images: { id: string; image_url: string; display_order: number | null }[];
+  images: MediaItem[];
+  videos: MediaItem[];
 }
 
 const OwnerPropertyManager = () => {
