@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,104 +6,104 @@
 
 @layer base {
   :root {
-    /* Deep Indigo + Emerald + Gold palette */
-    --background: 240 20% 99%;
-    --foreground: 234 30% 12%;
+    /* Warm Brown + Gold palette */
+    --background: 30 25% 96%;
+    --foreground: 0 0% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 234 30% 12%;
+    --card-foreground: 0 0% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 234 30% 12%;
+    --popover-foreground: 0 0% 16%;
 
-    /* Deep Indigo #4F46E5 → hsl(243, 75%, 59%) */
-    --primary: 243 75% 59%;
+    /* Primary Brown #8B5E3C → hsl(25, 41%, 39%) */
+    --primary: 25 41% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 14% 96%;
-    --secondary-foreground: 234 30% 12%;
+    --secondary: 30 20% 93%;
+    --secondary-foreground: 0 0% 16%;
 
-    --muted: 240 14% 96%;
-    --muted-foreground: 234 10% 46%;
+    --muted: 30 15% 93%;
+    --muted-foreground: 220 9% 46%;
 
-    /* Emerald #10B981 → hsl(160, 84%, 39%) */
-    --accent: 160 84% 39%;
+    /* Gold Accent #C89B3C → hsl(40, 55%, 51%) */
+    --accent: 40 55% 51%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 12% 92%;
-    --input: 240 12% 92%;
-    --ring: 243 75% 59%;
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 25 41% 39%;
 
     --radius: 0.75rem;
 
-    /* Gold for verified #F59E0B → hsl(38, 92%, 50%) */
-    --verified: 38 92% 50%;
+    /* Verified badge - gold */
+    --verified: 40 55% 51%;
     --verified-foreground: 0 0% 100%;
 
-    --success: 160 84% 39%;
+    --success: 122 39% 33%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Indigo tints */
-    --indigo-50: 240 100% 98%;
-    --indigo-100: 240 95% 93%;
-    --indigo-200: 243 90% 86%;
-    --indigo-500: 243 75% 59%;
-    --indigo-600: 243 76% 53%;
-    --indigo-700: 244 78% 47%;
-    --indigo-900: 244 47% 20%;
+    /* Brown tints */
+    --brown-50: 30 30% 97%;
+    --brown-100: 30 28% 92%;
+    --brown-200: 28 25% 84%;
+    --brown-500: 25 41% 39%;
+    --brown-600: 25 45% 33%;
+    --brown-700: 24 50% 24%;
+    --brown-900: 24 47% 14%;
 
-    --font-heading: 'Plus Jakarta Sans', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
+    --font-body: 'Inter', sans-serif;
 
-    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-    --shadow-card-hover: 0 10px 30px -8px rgba(79, 70, 229, 0.12), 0 4px 10px -6px rgba(0, 0, 0, 0.06);
-    --shadow-elevated: 0 25px 60px -12px rgba(79, 70, 229, 0.18);
+    --shadow-card: 0 1px 3px 0 rgba(139, 94, 60, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+    --shadow-card-hover: 0 10px 30px -8px rgba(139, 94, 60, 0.12), 0 4px 10px -6px rgba(0, 0, 0, 0.06);
+    --shadow-elevated: 0 25px 60px -12px rgba(139, 94, 60, 0.18);
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 243 75% 59%;
+    --sidebar-background: 24 50% 14%;
+    --sidebar-foreground: 30 20% 90%;
+    --sidebar-primary: 40 55% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 243 75% 59%;
+    --sidebar-accent: 24 40% 20%;
+    --sidebar-accent-foreground: 30 20% 95%;
+    --sidebar-border: 24 35% 22%;
+    --sidebar-ring: 40 55% 51%;
   }
 
   .dark {
-    --background: 234 30% 6%;
-    --foreground: 0 0% 96%;
-    --card: 234 25% 9%;
-    --card-foreground: 0 0% 96%;
-    --popover: 234 25% 9%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 243 75% 65%;
+    --background: 24 20% 7%;
+    --foreground: 30 10% 92%;
+    --card: 24 18% 11%;
+    --card-foreground: 30 10% 92%;
+    --popover: 24 18% 11%;
+    --popover-foreground: 30 10% 92%;
+    --primary: 25 41% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 234 20% 14%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 234 20% 14%;
-    --muted-foreground: 234 10% 55%;
-    --accent: 160 84% 39%;
+    --secondary: 24 15% 16%;
+    --secondary-foreground: 30 10% 92%;
+    --muted: 24 15% 16%;
+    --muted-foreground: 30 8% 55%;
+    --accent: 40 55% 51%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 96%;
-    --border: 234 20% 18%;
-    --input: 234 20% 18%;
-    --ring: 243 75% 65%;
-    --verified: 38 92% 50%;
+    --destructive-foreground: 30 10% 92%;
+    --border: 24 15% 20%;
+    --input: 24 15% 20%;
+    --ring: 25 41% 48%;
+    --verified: 40 55% 51%;
     --verified-foreground: 0 0% 100%;
-    --sidebar-background: 234 30% 8%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 243 75% 65%;
+    --sidebar-background: 24 25% 8%;
+    --sidebar-foreground: 30 15% 90%;
+    --sidebar-primary: 40 55% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 234 20% 14%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 234 20% 18%;
-    --sidebar-ring: 243 75% 65%;
+    --sidebar-accent: 24 20% 14%;
+    --sidebar-accent-foreground: 30 15% 92%;
+    --sidebar-border: 24 18% 18%;
+    --sidebar-ring: 40 55% 51%;
   }
 }
 
@@ -125,19 +125,19 @@
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    background-image: linear-gradient(135deg, hsl(25, 41%, 39%), hsl(40, 55%, 51%));
   }
 
   .bg-gradient-primary {
-    background: linear-gradient(135deg, hsl(243, 75%, 59%), hsl(243, 78%, 47%));
+    background: linear-gradient(135deg, hsl(25, 41%, 39%), hsl(40, 55%, 51%));
   }
 
   .bg-gradient-accent {
-    background: linear-gradient(135deg, hsl(160, 84%, 39%), hsl(160, 70%, 30%));
+    background: linear-gradient(135deg, hsl(40, 55%, 51%), hsl(40, 45%, 40%));
   }
 
   .bg-gradient-hero {
-    background: linear-gradient(135deg, hsl(243, 75%, 15%), hsl(243, 60%, 25%), hsl(234, 30%, 12%));
+    background: linear-gradient(135deg, hsl(24, 50%, 12%), hsl(25, 40%, 22%), hsl(24, 30%, 16%));
   }
 
   .shadow-card {
