@@ -2,10 +2,11 @@ import { useEffect } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import {
   Home, Search, Heart, Calendar, Star, User,
-  Sparkles, MapPin, ShirtIcon
+  Sparkles, MapPin, ShirtIcon, Gift
 } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import UserHome from "@/components/user/UserHome";
+import ReferAndEarn from "@/components/user/ReferAndEarn";
 import UserSearch from "@/components/user/UserSearch";
 import UserSaved from "@/components/user/UserSaved";
 import UserBookings from "@/components/user/UserBookings";
@@ -29,6 +30,7 @@ const sidebarGroups = [
     items: [
       { title: "Bookings", url: "/dashboard/bookings", icon: Calendar },
       { title: "Laundry", url: "/dashboard/laundry", icon: ShirtIcon },
+      { title: "Refer & Earn", url: "/dashboard/referrals", icon: Gift },
       { title: "Reviews", url: "/dashboard/reviews", icon: Star },
     ],
   },
@@ -65,6 +67,7 @@ const UserDashboard = () => {
         <Route path="saved" element={<UserSaved />} />
         <Route path="bookings" element={<UserBookings />} />
         <Route path="laundry" element={<UserLaundry />} />
+        <Route path="referrals" element={<ReferAndEarn />} />
         <Route path="reviews" element={<UserReviews />} />
         <Route path="profile" element={<UserProfile />} />
       </Routes>

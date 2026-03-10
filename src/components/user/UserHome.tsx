@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Star, TrendingUp, Building2, Calendar, ArrowRight, Sparkles } from "lucide-react";
+import ReferAndEarn from "./ReferAndEarn";
+import LifestyleServices from "./LifestyleServices";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,6 +121,12 @@ const UserHome = () => {
           </div>
         )}
       </div>
+
+      {/* Refer & Earn */}
+      <ReferAndEarn />
+
+      {/* Lifestyle Services */}
+      <LifestyleServices />
     </div>
   );
 };
