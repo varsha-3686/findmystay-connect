@@ -14,6 +14,7 @@ import AdminHostelApprovals from "@/components/admin/AdminHostelApprovals";
 import AdminComplaints from "@/components/admin/AdminComplaints";
 import AdminActivityMonitor from "@/components/admin/AdminActivityMonitor";
 import AdminOwnerVerification from "@/components/admin/AdminOwnerVerification";
+import AdminLaundry from "@/components/admin/AdminLaundry";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
