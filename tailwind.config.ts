@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Plus Jakarta Sans', 'sans-serif'],
-        body: ['DM Sans', 'sans-serif'],
+        heading: ['Poppins', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -63,14 +63,14 @@ export default {
           DEFAULT: "hsl(var(--verified))",
           foreground: "hsl(var(--verified-foreground))",
         },
-        indigo: {
-          50: "hsl(var(--indigo-50))",
-          100: "hsl(var(--indigo-100))",
-          200: "hsl(var(--indigo-200))",
-          500: "hsl(var(--indigo-500))",
-          600: "hsl(var(--indigo-600))",
-          700: "hsl(var(--indigo-700))",
-          900: "hsl(var(--indigo-900))",
+        brown: {
+          50: "hsl(var(--brown-50))",
+          100: "hsl(var(--brown-100))",
+          200: "hsl(var(--brown-200))",
+          500: "hsl(var(--brown-500))",
+          600: "hsl(var(--brown-600))",
+          700: "hsl(var(--brown-700))",
+          900: "hsl(var(--brown-900))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
