@@ -37,6 +37,7 @@ const sidebarGroups = [
       { title: "Reviews", url: "/admin/reviews", icon: MessageSquare },
       { title: "Media Verification", url: "/admin/media", icon: Building2 },
       { title: "Complaints", url: "/admin/complaints", icon: MessageSquareWarning },
+      { title: "Laundry", url: "/admin/laundry", icon: ShirtIcon },
     ],
   },
 ];
