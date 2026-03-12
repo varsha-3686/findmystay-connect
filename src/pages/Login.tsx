@@ -50,7 +50,9 @@ const Login = () => {
 
   useEffect(() => {
     if (user && rolesLoaded) {
-      if (hasRole("admin")) navigate("/admin");
+      if (redirectPath) {
+        navigate(redirectPath);
+      } else if (hasRole("admin")) navigate("/admin");
       else if (hasRole("owner")) navigate("/owner");
       else if (hasRole("owner_pending" as any)) navigate("/owner-verification-pending");
       else navigate("/dashboard");

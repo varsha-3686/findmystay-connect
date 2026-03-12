@@ -358,14 +358,27 @@ const ListingDetail = () => {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => navigate(`/booking/${listing.id}`)}
-                    variant="hero"
-                    size="lg"
-                    className="w-full"
-                  >
-                    Request Booking
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleSaveToggle}
+                      variant="outline"
+                      size="lg"
+                      className="flex-1 gap-2 rounded-xl border-primary/30 hover:bg-primary/5"
+                      disabled={savingLike}
+                    >
+                      <Heart className={`w-4 h-4 ${liked ? "fill-destructive text-destructive" : "text-primary"}`} />
+                      {liked ? "Saved" : "Save"}
+                    </Button>
+                    <Button
+                      onClick={handleBookNow}
+                      variant="hero"
+                      size="lg"
+                      className="flex-[2] gap-2"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Book Now
+                    </Button>
+                  </div>
 
                   <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
                     <Shield className="w-3.5 h-3.5 text-accent" />
