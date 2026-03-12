@@ -221,10 +221,11 @@ const ListingDetail = () => {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button
-                      onClick={() => setLiked(!liked)}
+                      onClick={handleSaveToggle}
+                      disabled={savingLike}
                       className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${liked ? "bg-destructive/10 border-destructive/30" : "border-border hover:bg-secondary"}`}
                     >
-                      <Heart className={`w-4 h-4 ${liked ? "fill-destructive text-destructive" : ""}`} />
+                      <Heart className={`w-4 h-4 transition-all ${liked ? "fill-destructive text-destructive" : "hover:scale-110"}`} />
                     </button>
                     <button className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-secondary transition-colors">
                       <Share2 className="w-4 h-4" />
