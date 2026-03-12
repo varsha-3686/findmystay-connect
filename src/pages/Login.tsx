@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Building2, Mail, ArrowRight, ShieldCheck, User, Lock, MapPin, Briefcase, IndianRupee, GraduationCap, Home, Phone, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ const Login = () => {
   const [selectedRole, setSelectedRole] = useState<SelectedRole>(null);
   const verifyingRef = useRef(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
   const { user, hasRole, rolesLoaded } = useAuth();
 
   // Registration fields - tenant
@@ -48,7 +50,9 @@ const Login = () => {
 
   useEffect(() => {
     if (user && rolesLoaded) {
-      if (hasRole("admin")) navigate("/admin");
+      if (redirectPath) {
+        navigate(redirectPath);
+      } else if (hasRole("admin")) navigate("/admin");
       else if (hasRole("owner")) navigate("/owner");
       else if (hasRole("owner_pending" as any)) navigate("/owner-verification-pending");
       else navigate("/dashboard");
@@ -301,7 +305,11 @@ const Login = () => {
               <motion.div key="contact" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                 <div>
                   <h1 className="font-heading font-bold text-2xl mb-1">Welcome to StayNest</h1>
-                  <p className="text-muted-foreground text-sm">Enter your details to receive a verification code</p>
+                  <p className="text-muted-foreground text-sm">
+                    {redirectPath
+                      ? "Please sign in or create an account to continue."
+                      : "Enter your details to receive a verification code"}
+                  </p>
                 </div>
 
                 {/* Contact method toggle */}

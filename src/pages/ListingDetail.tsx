@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const amenityIconMap: Record<string, React.ReactNode> = {
   WiFi: <Wifi className="w-5 h-5" />,
@@ -38,12 +39,61 @@ const mockReviews = [
 const ListingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const listing = listings.find((l) => l.id === id);
   const [activeImage, setActiveImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [savingLike, setSavingLike] = useState(false);
   const [dbPhotos, setDbPhotos] = useState<{ id: string; url: string; uploaded_by: string; type: "photo" }[]>([]);
   const [dbVideos, setDbVideos] = useState<{ id: string; url: string; uploaded_by: string; type: "video" }[]>([]);
+
+  // Check if hostel is already saved
+  useEffect(() => {
+    if (!user || !id) return;
+    supabase
+      .from("saved_hostels")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("hostel_id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setLiked(true);
+      });
+  }, [user, id]);
+
+  const handleSaveToggle = async () => {
+    if (!user) {
+      toast.info("Please sign in to save hostels.");
+      navigate(`/login?redirect=/listing/${id}`);
+      return;
+    }
+    if (savingLike) return;
+    setSavingLike(true);
+    try {
+      if (liked) {
+        await supabase.from("saved_hostels").delete().eq("user_id", user.id).eq("hostel_id", id!);
+        setLiked(false);
+        toast.success("Removed from saved hostels");
+      } else {
+        await supabase.from("saved_hostels").insert({ user_id: user.id, hostel_id: id! });
+        setLiked(true);
+        toast.success("Hostel saved to your favorites!");
+      }
+    } catch {
+      toast.error("Failed to update saved hostels");
+    }
+    setSavingLike(false);
+  };
+
+  const handleBookNow = () => {
+    if (!user) {
+      toast.info("Please sign in or create an account to continue booking.");
+      navigate(`/login?redirect=/booking/${id}`);
+      return;
+    }
+    navigate(`/booking/${id}`);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -171,10 +221,11 @@ const ListingDetail = () => {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button
-                      onClick={() => setLiked(!liked)}
+                      onClick={handleSaveToggle}
+                      disabled={savingLike}
                       className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${liked ? "bg-destructive/10 border-destructive/30" : "border-border hover:bg-secondary"}`}
                     >
-                      <Heart className={`w-4 h-4 ${liked ? "fill-destructive text-destructive" : ""}`} />
+                      <Heart className={`w-4 h-4 transition-all ${liked ? "fill-destructive text-destructive" : "hover:scale-110"}`} />
                     </button>
                     <button className="w-10 h-10 rounded-full border border-border flex items-center justify-center hover:bg-secondary transition-colors">
                       <Share2 className="w-4 h-4" />
@@ -307,14 +358,27 @@ const ListingDetail = () => {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => navigate(`/booking/${listing.id}`)}
-                    variant="hero"
-                    size="lg"
-                    className="w-full"
-                  >
-                    Request Booking
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleSaveToggle}
+                      variant="outline"
+                      size="lg"
+                      className="flex-1 gap-2 rounded-xl border-primary/30 hover:bg-primary/5"
+                      disabled={savingLike}
+                    >
+                      <Heart className={`w-4 h-4 ${liked ? "fill-destructive text-destructive" : "text-primary"}`} />
+                      {liked ? "Saved" : "Save"}
+                    </Button>
+                    <Button
+                      onClick={handleBookNow}
+                      variant="hero"
+                      size="lg"
+                      className="flex-[2] gap-2"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      Book Now
+                    </Button>
+                  </div>
 
                   <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
                     <Shield className="w-3.5 h-3.5 text-accent" />
