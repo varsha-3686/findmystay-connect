@@ -56,7 +56,7 @@ const Signup = () => {
   const validate = () => {
     if (!fullName.trim()) { toast.error("Please enter your full name."); return false; }
     if (contactMethod === "email") {
-      if (!email.trim() || !/^[^s@]+@[^s@]+.[^s@]+$/.test(email.trim())) {
+      if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
         toast.error("Please enter a valid email address."); return false;
       }
     } else {
