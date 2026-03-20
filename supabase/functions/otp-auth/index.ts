@@ -242,6 +242,27 @@ Deno.serve(async (req) => {
       let isNewUser = false;
 
       if (existingUser) {
+        // Check if user account is blocked
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("account_status")
+          .eq("user_id", existingUser.id)
+          .maybeSingle();
+
+        if (profile?.account_status === "blocked") {
+          return new Response(
+            JSON.stringify({ error: "Your account has been blocked. Please contact support." }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (profile?.account_status === "suspended") {
+          return new Response(
+            JSON.stringify({ error: "Your account has been suspended. Please contact support." }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         const { data: tokenData, error: tokenError } =
           await supabase.auth.admin.generateLink({
             type: "magiclink",
