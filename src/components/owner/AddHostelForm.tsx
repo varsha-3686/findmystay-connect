@@ -141,7 +141,8 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
       setForm({ hostel_name: "", description: "", location: "", city: "", property_type: "hostel", gender: "co-ed", price_min: "", price_max: "", latitude: "", longitude: "" });
       setFacilities([]);
       setRooms([{ sharing_type: "single", price_per_month: "", total_beds: "1", available_beds: "1" }]);
-      setImages([]);
+      setCategoryImages({});
+      setPhotoErrors({});
     } catch (err: any) {
       toast.error(err.message || "Failed to add property");
     } finally {
