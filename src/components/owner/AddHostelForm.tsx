@@ -66,6 +66,15 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate photos
+    const imgErrors = validateCategoryImages(categoryImages);
+    setPhotoErrors(imgErrors);
+    if (Object.keys(imgErrors).length > 0) {
+      toast.error("Please upload all required property photos");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
