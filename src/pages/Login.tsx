@@ -66,10 +66,35 @@ const Login = () => {
     }
   }, [resendCountdown]);
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
 
+    // If email + password provided, do direct password login (no OTP)
+    if (contactMethod === "email" && password.trim()) {
+      if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        toast.error("Please enter a valid email address."); return;
+      }
+      setSubmitting(true);
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: password.trim(),
+        });
+        if (error) {
+          toast.error(error.message || "Invalid email or password.");
+        } else if (data.session) {
+          toast.success("Welcome back!");
+          // Role-based redirect handled by useEffect watching user/rolesLoaded
+        }
+      } catch {
+        toast.error("Something went wrong. Please try again.");
+      }
+      setSubmitting(false);
+      return;
+    }
+
+    // Otherwise, proceed with OTP flow
     if (contactMethod === "email") {
       if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
         toast.error("Please enter a valid email address."); return;
