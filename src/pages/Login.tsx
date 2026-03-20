@@ -280,7 +280,7 @@ const Login = () => {
                     style={{ backgroundColor: "#5A3E2B" }}
                     disabled={submitting}
                   >
-                    {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending OTP...</> : <>Send OTP <ArrowRight className="w-4 h-4" /></>}
+                    {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> {password.trim() ? "Signing in..." : "Sending OTP..."}</> : <>{password.trim() ? "Sign In" : "Send OTP"} <ArrowRight className="w-4 h-4" /></>}
                   </Button>
                 </form>
 
