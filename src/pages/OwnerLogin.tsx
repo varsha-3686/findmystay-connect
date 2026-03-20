@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 type AuthStep = "contact" | "otp" | "register";
 type ContactMethod = "email" | "mobile";
 
-const IS_DEV_MODE = true;
+const IS_DEV_MODE = false;
 
 const OwnerLogin = () => {
   const [step, setStep] = useState<AuthStep>("contact");
