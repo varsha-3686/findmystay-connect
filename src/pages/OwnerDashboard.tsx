@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import {
   BarChart3, Building2, Users, Star,
@@ -15,34 +15,66 @@ import OwnerLaundryRequests from "@/components/owner/OwnerLaundryRequests";
 import OwnerLaundryServices from "@/components/owner/OwnerLaundryServices";
 import AddHostelForm from "@/components/owner/AddHostelForm";
 import UserProfile from "@/components/user/UserProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-const sidebarGroups = [
-  {
-    label: "Overview",
-    items: [
-      { title: "Analytics", url: "/owner", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "Manage",
-    items: [
+const OwnerDashboard = () => {
+  const { user } = useAuth();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [hasLaundryProperties, setHasLaundryProperties] = useState(false);
+  const handleRefresh = () => setRefreshKey(k => k + 1);
+
+  useEffect(() => {
+    const loadLaundryEligibility = async () => {
+      if (!user) return;
+      const { data: hostels } = await supabase
+        .from("hostels")
+        .select("id")
+        .eq("owner_id", user.id);
+      const hostelIds = (hostels || []).map((h) => h.id);
+      if (!hostelIds.length) {
+        setHasLaundryProperties(false);
+        return;
+      }
+      const { data: facilities } = await supabase
+        .from("facilities")
+        .select("hostel_id, laundry")
+        .in("hostel_id", hostelIds)
+        .eq("laundry", true);
+      setHasLaundryProperties((facilities || []).length > 0);
+    };
+    loadLaundryEligibility();
+  }, [user, refreshKey]);
+
+  const sidebarGroups = useMemo(() => {
+    const manageItems = [
       { title: "Properties", url: "/owner/properties", icon: Building2 },
       { title: "Bookings", url: "/owner/bookings", icon: Bed },
       { title: "Members", url: "/owner/members", icon: Users },
-      { title: "Laundry Services", url: "/owner/laundry-services", icon: WashingMachine },
-      { title: "Laundry Requests", url: "/owner/laundry", icon: ShirtIcon },
+      ...(hasLaundryProperties
+        ? [
+            { title: "Laundry Services", url: "/owner/laundry-services", icon: WashingMachine },
+            { title: "Laundry Requests", url: "/owner/laundry", icon: ShirtIcon },
+          ]
+        : []),
       { title: "Reviews", url: "/owner/reviews", icon: Star },
-    ],
-  },
-  {
-    label: "Account",
-    items: [{ title: "My Profile", url: "/owner/profile", icon: User }],
-  },
-];
+    ];
 
-const OwnerDashboard = () => {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const handleRefresh = () => setRefreshKey(k => k + 1);
+    return [
+      {
+        label: "Overview",
+        items: [{ title: "Analytics", url: "/owner", icon: BarChart3 }],
+      },
+      {
+        label: "Manage",
+        items: manageItems,
+      },
+      {
+        label: "Account",
+        items: [{ title: "My Profile", url: "/owner/profile", icon: User }],
+      },
+    ];
+  }, [hasLaundryProperties]);
 
   return (
     <ProtectedRoute allowedRoles={["owner"]} loginPath="/login" unauthorizedPath="/">

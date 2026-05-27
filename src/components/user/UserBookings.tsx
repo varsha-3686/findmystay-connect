@@ -12,9 +12,10 @@ import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pending", color: "bg-warning/10 text-warning", icon: Clock },
-  approved: { label: "Approved", color: "bg-accent/10 text-accent", icon: CheckCircle2 },
+  approved: { label: "Accepted", color: "bg-accent/10 text-accent", icon: CheckCircle2 },
   rejected: { label: "Rejected", color: "bg-destructive/10 text-destructive", icon: XCircle },
   cancelled: { label: "Cancelled", color: "bg-muted text-muted-foreground", icon: XCircle },
+  checked_in: { label: "Checked In", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", icon: CheckCircle2 },
   completed: { label: "Completed", color: "bg-primary/10 text-primary", icon: CheckCircle2 },
 };
 
@@ -33,7 +34,7 @@ const UserBookings = () => {
     if (!user) { setLoading(false); return; }
     const { data, error } = await supabase
       .from("bookings")
-      .select("*, hostels(hostel_name, city, location, contact_phone, contact_email)")
+      .select("*, hostels(hostel_name, city, location, contact_phone, contact_email), room_types(type)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) { toast.error(error.message); setLoading(false); return; }
@@ -106,6 +107,9 @@ const UserBookings = () => {
                     </p>
                     {booking.move_in_date && (
                       <p className="text-xs text-muted-foreground">Move-in: {new Date(booking.move_in_date).toLocaleDateString()}</p>
+                    )}
+                    {booking.room_types?.type && (
+                      <p className="text-xs text-muted-foreground capitalize">Room Type: {booking.room_types.type}</p>
                     )}
                     <p className="text-[10px] text-muted-foreground mt-1">
                       Requested: {new Date(booking.created_at).toLocaleDateString()}

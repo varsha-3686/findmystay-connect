@@ -67,11 +67,22 @@ const OwnerLaundryRequests = () => {
     }
 
     const hostelIds = hostels.map(h => h.id);
+    const { data: laundryFacilities } = await supabase
+      .from("facilities")
+      .select("hostel_id")
+      .in("hostel_id", hostelIds)
+      .eq("laundry", true);
+    const laundryHostelIds = (laundryFacilities || []).map((f) => f.hostel_id);
+    if (!laundryHostelIds.length) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("laundry_orders")
       .select("*, laundry_order_items(quantity, price, laundry_services(name)), profiles!laundry_orders_user_id_fkey(full_name, email, phone)")
-      .in("hostel_id", hostelIds)
+      .in("hostel_id", laundryHostelIds)
       .order("created_at", { ascending: false });
 
     setOrders((data || []) as any);

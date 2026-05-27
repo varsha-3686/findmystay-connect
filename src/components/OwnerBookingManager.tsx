@@ -37,6 +37,14 @@ const statusStyles: Record<string, string> = {
   checked_in: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   completed: "bg-primary/10 text-primary",
 };
+const statusLabels: Record<string, string> = {
+  pending: "Pending",
+  approved: "Accepted",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+  checked_in: "Checked In",
+  completed: "Completed",
+};
 
 const OwnerBookingManager = () => {
   const { user } = useAuth();
@@ -90,6 +98,19 @@ const OwnerBookingManager = () => {
         status === "rejected" ? "Booking rejected" :
         status === "checked_in" ? "Tenant checked in & added as hostel member" :
         `Booking ${status}`
+      );
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? {
+                ...booking,
+                status,
+                room_types: status === "checked_in" && booking.room_types
+                  ? { ...booking.room_types, available_beds: Math.max((booking.room_types.available_beds || 0) - 1, 0) }
+                  : booking.room_types,
+              }
+            : booking
+        )
       );
       fetchBookings();
     } catch (err: any) {
@@ -147,7 +168,7 @@ const OwnerBookingManager = () => {
                   </div>
                 </div>
                 <Badge className={statusStyles[booking.status] || statusStyles.pending}>
-                  {booking.status.replace("_", " ")}
+                  {statusLabels[booking.status] || booking.status.replace("_", " ")}
                 </Badge>
               </div>
 
@@ -180,7 +201,7 @@ const OwnerBookingManager = () => {
                     size="sm"
                     className="gap-1.5 rounded-xl flex-1"
                     onClick={() => updateStatus(booking.id, "approved")}
-                    disabled={!!processing}
+                    disabled={processing === booking.id}
                   >
                     {processing === booking.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     Approve
@@ -190,7 +211,7 @@ const OwnerBookingManager = () => {
                     size="sm"
                     className="gap-1.5 rounded-xl flex-1 text-destructive hover:text-destructive"
                     onClick={() => updateStatus(booking.id, "rejected")}
-                    disabled={!!processing}
+                    disabled={processing === booking.id}
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     Reject
@@ -204,7 +225,7 @@ const OwnerBookingManager = () => {
                     size="sm"
                     className="gap-1.5 rounded-xl flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => updateStatus(booking.id, "checked_in")}
-                    disabled={!!processing}
+                    disabled={processing === booking.id}
                   >
                     {processing === booking.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />}
                     Check In & Onboard
@@ -219,7 +240,7 @@ const OwnerBookingManager = () => {
                     size="sm"
                     className="gap-1.5 rounded-xl flex-1"
                     onClick={() => updateStatus(booking.id, "completed")}
-                    disabled={!!processing}
+                    disabled={processing === booking.id}
                   >
                     {processing === booking.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     Mark Completed

@@ -15,12 +15,16 @@ interface Member {
   id: string;
   user_id: string;
   hostel_id: string;
+  booking_id: string | null;
   joined_at: string;
   status: string;
   hostel_name: string;
+  hostel_gender: string | null;
   full_name: string;
   email: string | null;
   phone: string | null;
+  room_type: string | null;
+  booking_status: string | null;
 }
 
 const OwnerMembers = () => {
@@ -38,7 +42,7 @@ const OwnerMembers = () => {
   const fetchMembers = async () => {
     const { data: hostels } = await supabase
       .from("hostels")
-      .select("id, hostel_name")
+      .select("id, hostel_name, gender")
       .eq("owner_id", user!.id);
 
     if (!hostels?.length) {
@@ -47,7 +51,7 @@ const OwnerMembers = () => {
     }
 
     const hostelIds = hostels.map(h => h.id);
-    const hostelMap = new Map(hostels.map(h => [h.id, h.hostel_name]));
+    const hostelMap = new Map(hostels.map(h => [h.id, { name: h.hostel_name, gender: h.gender }]));
 
     const { data: memberRows } = await supabase
       .from("hostel_members")
@@ -68,6 +72,16 @@ const OwnerMembers = () => {
       .in("user_id", userIds);
 
     const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+    const bookingIds = [...new Set(memberRows.map((m) => m.booking_id).filter(Boolean))] as string[];
+    const { data: bookings } = bookingIds.length
+      ? await supabase.from("bookings").select("id, status, room_type_id").in("id", bookingIds)
+      : { data: [] as any[] };
+    const bookingMap = new Map((bookings || []).map((b: any) => [b.id, b]));
+    const roomTypeIds = [...new Set((bookings || []).map((b: any) => b.room_type_id).filter(Boolean))] as string[];
+    const { data: roomTypes } = roomTypeIds.length
+      ? await supabase.from("room_types").select("id, type").in("id", roomTypeIds)
+      : { data: [] as any[] };
+    const roomTypeMap = new Map((roomTypes || []).map((r: any) => [r.id, r.type]));
 
     setMembers(
       memberRows.map((m) => {
@@ -76,12 +90,16 @@ const OwnerMembers = () => {
           id: m.id,
           user_id: m.user_id,
           hostel_id: m.hostel_id,
+          booking_id: m.booking_id || null,
           joined_at: m.joined_at,
           status: m.status,
-          hostel_name: hostelMap.get(m.hostel_id) || "Unknown",
+          hostel_name: hostelMap.get(m.hostel_id)?.name || "Unknown",
+          hostel_gender: hostelMap.get(m.hostel_id)?.gender || null,
           full_name: profile?.full_name || "Unknown",
           email: profile?.email || null,
           phone: profile?.phone || null,
+          room_type: m.booking_id ? roomTypeMap.get(bookingMap.get(m.booking_id)?.room_type_id) || null : null,
+          booking_status: m.booking_id ? bookingMap.get(m.booking_id)?.status || null : null,
         };
       })
     );
@@ -151,6 +169,8 @@ const OwnerMembers = () => {
                 <TableHead>Mobile</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Hostel</TableHead>
+                <TableHead>Room Type</TableHead>
+                <TableHead>Gender</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -184,6 +204,8 @@ const OwnerMembers = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{member.hostel_name}</TableCell>
+                  <TableCell className="text-sm capitalize">{member.room_type || "N/A"}</TableCell>
+                  <TableCell className="text-sm capitalize">{member.hostel_gender || "N/A"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
@@ -238,6 +260,8 @@ const OwnerMembers = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{member.hostel_name}</TableCell>
+                  <TableCell className="text-sm capitalize">{member.room_type || "N/A"}</TableCell>
+                  <TableCell className="text-sm capitalize">{member.hostel_gender || "N/A"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(member.joined_at).toLocaleDateString()}
                   </TableCell>

@@ -23,6 +23,13 @@ interface HostelInfo {
   image_url: string | null;
 }
 
+interface RoomTypeOption {
+  id: string;
+  type: string;
+  price: number;
+  available_beds: number;
+}
+
 const BookingRequest = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -31,6 +38,8 @@ const BookingRequest = () => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [roomTypes, setRoomTypes] = useState<RoomTypeOption[]>([]);
+  const [selectedRoomType, setSelectedRoomType] = useState("");
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -52,7 +61,7 @@ const BookingRequest = () => {
     if (!id) return;
     const fetchHostel = async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("hostels")
         .select(`
           id, hostel_name, location, city, price_min, price_max,
@@ -60,6 +69,21 @@ const BookingRequest = () => {
         `)
         .eq("id", id)
         .maybeSingle();
+      if (error) {
+        toast.error(error.message);
+      }
+
+      const { data: roomTypesData, error: roomTypesError } = await supabase
+        .from("room_types")
+        .select("id, type, price, available_beds")
+        .eq("property_id", id)
+        .gt("available_beds", 0)
+        .order("price", { ascending: true });
+      if (roomTypesError) {
+        toast.error(roomTypesError.message);
+      } else {
+        setRoomTypes((roomTypesData || []) as RoomTypeOption[]);
+      }
 
       if (data) {
         const images = (data as any).hostel_images || [];
@@ -109,12 +133,21 @@ const BookingRequest = () => {
       navigate(`/login?redirect=/booking/${id}`);
       return;
     }
+    if (roomTypes.length === 0) {
+      toast.error("No room types are currently available for booking.");
+      return;
+    }
+    if (!selectedRoomType) {
+      toast.error("Please select a room type.");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const { error } = await supabase.from("bookings").insert({
         user_id: user.id,
         hostel_id: hostel.id,
+        room_type_id: selectedRoomType,
         full_name: formData.fullName,
         phone: formData.phone,
         email: formData.email,
@@ -177,6 +210,22 @@ const BookingRequest = () => {
               <p className="text-muted-foreground text-sm mb-8">Fill in your details to send a booking request</p>
 
               <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Room Type</Label>
+                  <Select value={selectedRoomType} onValueChange={setSelectedRoomType}>
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue placeholder={roomTypes.length ? "Select room type" : "No room types available"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roomTypes.map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          {room.type} — ₹{room.price.toLocaleString()}/mo ({room.available_beds} beds available)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Full Name</Label>
@@ -233,7 +282,7 @@ const BookingRequest = () => {
                   </div>
                 </div>
 
-                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
+                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting || roomTypes.length === 0}>
                   {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Submitting...</> : "Submit Booking Request"}
                 </Button>
 

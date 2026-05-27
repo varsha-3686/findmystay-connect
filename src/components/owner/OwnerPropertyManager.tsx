@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, Bed, Loader2, Plus, Trash2, Save, Edit2, X } from "lucide-react";
+import { Building2, Bed, Loader2, Plus, Trash2, Save, Edit2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ interface HostelWithRooms {
   room_types: RoomTypeRow[];
   images: MediaItem[];
   videos: MediaItem[];
+  facilities: Record<string, boolean> | null;
 }
 
 const OwnerPropertyManager = () => {
@@ -48,6 +49,7 @@ const OwnerPropertyManager = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [editRoom, setEditRoom] = useState<Record<string, any>>({});
+  const [previewIndex, setPreviewIndex] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (user) fetchHostels();
@@ -63,14 +65,16 @@ const OwnerPropertyManager = () => {
     if (data) {
       const enriched: HostelWithRooms[] = [];
       for (const h of data) {
-        const [roomsRes, imagesRes, videosRes] = await Promise.all([
+        const [roomsRes, imagesRes, videosRes, facilitiesRes] = await Promise.all([
           supabase.from("room_types").select("*").eq("property_id", h.id).order("type"),
           supabase.from("hostel_images").select("*").eq("hostel_id", h.id).order("display_order"),
           (supabase.from("hostel_videos") as any).select("*").eq("hostel_id", h.id).order("display_order"),
+          supabase.from("facilities").select("*").eq("hostel_id", h.id).maybeSingle(),
         ]);
         const images = (imagesRes.data || []).map((img: any) => ({ id: img.id, url: img.image_url, uploaded_by: img.uploaded_by || "owner", display_order: img.display_order }));
         const videos = (videosRes.data || []).map((vid: any) => ({ id: vid.id, url: vid.video_url, uploaded_by: vid.uploaded_by || "owner", display_order: vid.display_order }));
-        enriched.push({ ...h, room_types: roomsRes.data || [], images, videos });
+        const { id, hostel_id, created_at, ...facilityFlags } = (facilitiesRes.data || {}) as any;
+        enriched.push({ ...h, room_types: roomsRes.data || [], images, videos, facilities: facilitiesRes.data ? facilityFlags : null });
       }
       setHostels(enriched);
     }
@@ -144,12 +148,20 @@ const OwnerPropertyManager = () => {
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
       verified: "bg-accent/10 text-accent",
-      pending: "bg-muted text-muted-foreground",
+      pending: "bg-warning/10 text-warning",
       under_review: "bg-verified/10 text-verified",
       rejected: "bg-destructive/10 text-destructive",
     };
-    return <Badge className={styles[status] || styles.pending}>{status.replace(/_/g, " ")}</Badge>;
+    const labels: Record<string, string> = {
+      pending: "Pending Approval",
+      verified: "Approved",
+      rejected: "Rejected",
+      under_review: "Under Review",
+    };
+    return <Badge className={styles[status] || styles.pending}>{labels[status] || status.replace(/_/g, " ")}</Badge>;
   };
+
+  const featureLabel = (key: string) => key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div className="space-y-4">
@@ -170,6 +182,45 @@ const OwnerPropertyManager = () => {
               className="w-full p-5 flex items-center gap-4 text-left hover:bg-secondary/30 transition-colors"
               onClick={() => setExpandedId(expandedId === hostel.id ? null : hostel.id)}
             >
+              {hostel.images.length > 0 && (
+                <div className="relative w-24 h-20 rounded-lg overflow-hidden shrink-0 border border-border/50">
+                  <img
+                    src={hostel.images[Math.min(previewIndex[hostel.id] || 0, hostel.images.length - 1)].url}
+                    alt={hostel.hostel_name}
+                    className="w-full h-full object-cover"
+                  />
+                  {hostel.images.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="absolute left-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-card/80 flex items-center justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewIndex((prev) => ({
+                            ...prev,
+                            [hostel.id]: ((prev[hostel.id] || 0) - 1 + hostel.images.length) % hostel.images.length,
+                          }));
+                        }}
+                      >
+                        <ChevronLeft className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-card/80 flex items-center justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewIndex((prev) => ({
+                            ...prev,
+                            [hostel.id]: ((prev[hostel.id] || 0) + 1) % hostel.images.length,
+                          }));
+                        }}
+                      >
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="font-heading font-semibold text-sm">{hostel.hostel_name}</h3>
@@ -178,6 +229,18 @@ const OwnerPropertyManager = () => {
                 <p className="text-muted-foreground text-xs">{hostel.location}, {hostel.city}</p>
                 {hostel.verified_status === "pending" && (
                   <p className="text-amber-600 text-xs mt-1 font-medium">Awaiting admin approval.</p>
+                )}
+                {hostel.facilities && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {Object.entries(hostel.facilities)
+                      .filter(([, enabled]) => enabled)
+                      .slice(0, 6)
+                      .map(([key]) => (
+                        <Badge key={key} variant="secondary" className="text-[10px]">
+                          {featureLabel(key)}
+                        </Badge>
+                      ))}
+                  </div>
                 )}
               </div>
               <div className="text-right shrink-0 flex flex-col items-end gap-2">

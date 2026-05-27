@@ -50,13 +50,24 @@ const OwnerLaundryServices = () => {
     if (hErr) { toast.error(hErr.message); setLoading(false); return; }
     if (!ownerHostels?.length) { setHostels([]); setServices([]); setLoading(false); return; }
 
-    setHostels(ownerHostels);
-
     const hostelIds = ownerHostels.map(h => h.id);
+    const { data: laundryFacilities, error: facilityErr } = await supabase
+      .from("facilities")
+      .select("hostel_id")
+      .in("hostel_id", hostelIds)
+      .eq("laundry", true);
+    if (facilityErr) { toast.error(facilityErr.message); setLoading(false); return; }
+    const enabledHostelIds = new Set((laundryFacilities || []).map(f => f.hostel_id));
+    const laundryHostels = ownerHostels.filter(h => enabledHostelIds.has(h.id));
+    if (!laundryHostels.length) { setHostels([]); setServices([]); setLoading(false); return; }
+
+    setHostels(laundryHostels);
+
+    const filteredHostelIds = laundryHostels.map(h => h.id);
     const { data: svcData, error: sErr } = await supabase
       .from("laundry_services")
       .select("*")
-      .in("hostel_id", hostelIds)
+      .in("hostel_id", filteredHostelIds)
       .order("name");
 
     if (sErr) { toast.error(sErr.message); setLoading(false); return; }

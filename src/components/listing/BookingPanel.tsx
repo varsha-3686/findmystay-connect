@@ -41,6 +41,7 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
   const selectedRoomData = rooms.find(r => r.id === selectedRoom);
   const displayPrice = selectedRoomData?.price || priceMin;
   const availableRooms = rooms.filter(r => r.available_beds > 0);
+  const hasBookableRoomTypes = availableRooms.length > 0;
 
   const handleBookNow = async () => {
     if (!user) {
@@ -53,15 +54,24 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
       toast.error("Please select a check-in date.");
       return;
     }
+    if (!hasBookableRoomTypes) {
+      toast.error("No beds are currently available for booking.");
+      return;
+    }
+    if (!selectedRoom) {
+      toast.error("Please select a room type before booking.");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const { error } = await supabase.from("bookings").insert({
         user_id: user.id,
         hostel_id: hostelId,
-        room_type_id: selectedRoom || null,
+        room_type_id: selectedRoom,
         full_name: user.user_metadata?.full_name || "",
         email: user.email || null,
+        phone: user.user_metadata?.phone || null,
         move_in_date: checkInDate,
         message: message || null,
         status: "pending" as any,
@@ -73,7 +83,7 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
           setSubmitted(true);
           return;
         }
-        throw error;
+        throw new Error(error.details ? `${error.message} (${error.details})` : error.message);
       }
       setSubmitted(true);
       toast.success("Booking request submitted! The owner will review it shortly.");
@@ -114,7 +124,7 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
         <span className="text-muted-foreground text-sm">/ month</span>
       </div>
 
-      {availableRooms.length > 0 && (
+      {hasBookableRoomTypes ? (
         <div className="space-y-2">
           <Label className="text-sm font-medium flex items-center gap-1.5">
             <BedDouble className="w-4 h-4 text-primary" /> Room Type
@@ -132,6 +142,10 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
             </SelectContent>
           </Select>
         </div>
+      ) : (
+        <p className="text-xs text-destructive bg-destructive/10 rounded-xl p-2">
+          No room types are currently available for booking at this property.
+        </p>
       )}
 
       <div className="space-y-2">
@@ -177,7 +191,7 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
         onClick={handleBookNow}
         size="lg"
         className="w-full gap-2 rounded-xl bg-[#8B5E3C] hover:bg-[#7A5235] text-white font-semibold shadow-md hover:-translate-y-0.5 transition-all"
-        disabled={submitting}
+        disabled={submitting || !hasBookableRoomTypes}
       >
         {submitting ? (
           <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>

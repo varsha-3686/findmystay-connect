@@ -141,6 +141,7 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
         .from("hostels")
         .insert({
           owner_id: user.id,
+          verified_status: "pending",
           hostel_name: form.hostel_name,
           description: form.description || null,
           location: form.location,
@@ -162,7 +163,8 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
       // 2. Add facilities
       const facilityData: Record<string, boolean> = {};
       FACILITIES.forEach(f => { facilityData[f] = facilities.includes(f); });
-      await supabase.from("facilities").insert({ hostel_id: hostel.id, ...facilityData });
+      const { error: facilityErr } = await supabase.from("facilities").insert({ hostel_id: hostel.id, ...facilityData });
+      if (facilityErr) throw facilityErr;
 
       // 3. Add room types
       const roomTypeRows = selectedRoomTypes.map((roomType) => {
@@ -189,19 +191,19 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
           const { error: uploadErr } = await supabase.storage
             .from("hostel-images")
             .upload(filePath, file);
+          if (uploadErr) throw uploadErr;
 
-          if (!uploadErr) {
-            const { data: publicUrl } = supabase.storage
-              .from("hostel-images")
-              .getPublicUrl(filePath);
+          const { data: publicUrl } = supabase.storage
+            .from("hostel-images")
+            .getPublicUrl(filePath);
 
-            await supabase.from("hostel_images").insert({
-              hostel_id: hostel.id,
-              image_url: publicUrl.publicUrl,
-              display_order: imgIndex,
-              image_category: category,
-            });
-          }
+          const { error: imageInsertErr } = await supabase.from("hostel_images").insert({
+            hostel_id: hostel.id,
+            image_url: publicUrl.publicUrl,
+            display_order: imgIndex,
+            image_category: category,
+          });
+          if (imageInsertErr) throw imageInsertErr;
           imgIndex++;
         }
       }
