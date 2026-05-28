@@ -17,14 +17,17 @@ import UserHostelStatus from "@/components/user/UserHostelStatus";
 import UserFraudComplaints from "@/components/user/UserFraudComplaints";
 import UserChat from "@/components/user/UserChat";
 import { useLaundryEligible } from "@/hooks/useLaundryEligible";
+import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
+import { ChatUnreadProvider } from "@/contexts/ChatUnreadContext";
 
 const UserDashboard = () => {
   const { eligible: showLaundry, loading: laundryLoading } = useLaundryEligible();
+  const chatUnread = useChatUnreadCount("resident", "/dashboard/chat");
 
   const sidebarGroups = useMemo(() => {
     const activityItems = [
       { title: "My Hostel", url: "/dashboard/my-hostel", icon: Building2 },
-      { title: "Chat", url: "/dashboard/chat", icon: MessageSquare },
+      { title: "Chat", url: "/dashboard/chat", icon: MessageSquare, badge: chatUnread.badge },
       { title: "Bookings", url: "/dashboard/bookings", icon: Calendar },
       ...(laundryLoading ? [] : showLaundry ? [{ title: "Laundry", url: "/dashboard/laundry", icon: ShirtIcon }] : []),
       { title: "Reviews", url: "/dashboard/reviews", icon: Star },
@@ -49,30 +52,38 @@ const UserDashboard = () => {
         items: [{ title: "Profile", url: "/dashboard/profile", icon: User }],
       },
     ];
-  }, [showLaundry, laundryLoading]);
+  }, [showLaundry, laundryLoading, chatUnread.badge]);
 
   return (
     <ProtectedRoute allowedRoles={["user"]} loginPath="/login">
-      <DashboardLayout
-        title="StayNest"
-        subtitle="Your Dashboard"
-        groups={sidebarGroups}
-        pageTitle="Dashboard"
+      <ChatUnreadProvider
+        value={{
+          refresh: chatUnread.refresh,
+          markGroupRead: chatUnread.markGroupRead,
+          markDmRead: chatUnread.markDmRead,
+        }}
       >
-        <Routes>
-          <Route index element={<UserHome />} />
-          <Route path="search" element={<UserSearch />} />
-          <Route path="saved" element={<UserSaved />} />
-          <Route path="my-hostel" element={<UserHostelStatus />} />
-          <Route path="chat" element={<UserChat mode="resident" />} />
-          <Route path="bookings" element={<UserBookings />} />
-          <Route path="laundry" element={<UserLaundryGate />} />
-          <Route path="referrals" element={<Navigate to="/dashboard" replace />} />
-          <Route path="reviews" element={<UserReviews />} />
-          <Route path="complaints" element={<UserFraudComplaints />} />
-          <Route path="profile" element={<UserProfile />} />
-        </Routes>
-      </DashboardLayout>
+        <DashboardLayout
+          title="StayNest"
+          subtitle="Your Dashboard"
+          groups={sidebarGroups}
+          pageTitle="Dashboard"
+        >
+          <Routes>
+            <Route index element={<UserHome />} />
+            <Route path="search" element={<UserSearch />} />
+            <Route path="saved" element={<UserSaved />} />
+            <Route path="my-hostel" element={<UserHostelStatus />} />
+            <Route path="chat" element={<UserChat mode="resident" />} />
+            <Route path="bookings" element={<UserBookings />} />
+            <Route path="laundry" element={<UserLaundryGate />} />
+            <Route path="referrals" element={<Navigate to="/dashboard" replace />} />
+            <Route path="reviews" element={<UserReviews />} />
+            <Route path="complaints" element={<UserFraudComplaints />} />
+            <Route path="profile" element={<UserProfile />} />
+          </Routes>
+        </DashboardLayout>
+      </ChatUnreadProvider>
     </ProtectedRoute>
   );
 };

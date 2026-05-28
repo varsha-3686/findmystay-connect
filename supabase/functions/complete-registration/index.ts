@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWelcomeEmail } from "./welcomeEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +66,7 @@ serve(async (req) => {
 
     if (profile_data?.full_name) profileUpdate.full_name = profile_data.full_name;
     if (profile_data?.phone) profileUpdate.phone = profile_data.phone;
+    if (profile_data?.email) profileUpdate.email = profile_data.email;
     if (profile_data?.hostel_name) profileUpdate.hostel_name = profile_data.hostel_name;
     if (profile_data?.property_location)
       profileUpdate.property_location = profile_data.property_location;
@@ -136,10 +138,30 @@ serve(async (req) => {
       }
     }
 
+    const welcomeRecipient =
+      user.email?.trim() ||
+      (typeof profile_data?.email === "string" ? profile_data.email.trim() : "");
+
+    const appUrl = Deno.env.get("APP_URL") ?? "https://staynest.app";
+    let welcomeEmailSent = false;
+
+    if (welcomeRecipient) {
+      welcomeEmailSent = await sendWelcomeEmail({
+        to: welcomeRecipient,
+        fullName:
+          (typeof profile_data?.full_name === "string" && profile_data.full_name) ||
+          (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
+          "",
+        role: selected_role,
+        appUrl,
+      });
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         role: roleToInsert,
+        welcome_email_sent: welcomeEmailSent,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -18,12 +18,15 @@ import UserProfile from "@/components/user/UserProfile";
 import UserChat from "@/components/user/UserChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useChatUnreadCount } from "@/hooks/useChatUnreadCount";
+import { ChatUnreadProvider } from "@/contexts/ChatUnreadContext";
 
 const OwnerDashboard = () => {
   const { user } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
   const [hasLaundryProperties, setHasLaundryProperties] = useState(false);
   const handleRefresh = () => setRefreshKey(k => k + 1);
+  const chatUnread = useChatUnreadCount("owner", "/owner/chat");
 
   useEffect(() => {
     const loadLaundryEligibility = async () => {
@@ -52,7 +55,7 @@ const OwnerDashboard = () => {
       { title: "Properties", url: "/owner/properties", icon: Building2 },
       { title: "Bookings", url: "/owner/bookings", icon: Bed },
       { title: "Members", url: "/owner/members", icon: Users },
-      { title: "Chat", url: "/owner/chat", icon: MessageSquare },
+      { title: "Chat", url: "/owner/chat", icon: MessageSquare, badge: chatUnread.badge },
       ...(hasLaundryProperties
         ? [
             { title: "Laundry Services", url: "/owner/laundry-services", icon: WashingMachine },
@@ -76,29 +79,37 @@ const OwnerDashboard = () => {
         items: [{ title: "My Profile", url: "/owner/profile", icon: User }],
       },
     ];
-  }, [hasLaundryProperties]);
+  }, [hasLaundryProperties, chatUnread.badge]);
 
   return (
     <ProtectedRoute allowedRoles={["owner"]} loginPath="/login" unauthorizedPath="/">
-      <DashboardLayout
-        title="StayNest"
-        subtitle="Owner Portal"
-        groups={sidebarGroups}
-        pageTitle="Owner Dashboard"
-        headerRight={<AddHostelForm onSuccess={handleRefresh} />}
+      <ChatUnreadProvider
+        value={{
+          refresh: chatUnread.refresh,
+          markGroupRead: chatUnread.markGroupRead,
+          markDmRead: chatUnread.markDmRead,
+        }}
       >
-        <Routes>
-          <Route index element={<OwnerAnalytics key={refreshKey} />} />
-          <Route path="properties" element={<OwnerPropertyManager key={refreshKey} />} />
-          <Route path="bookings" element={<OwnerBookingManager />} />
-          <Route path="members" element={<OwnerMembers />} />
-          <Route path="chat" element={<UserChat mode="owner" />} />
-          <Route path="laundry-services" element={<OwnerLaundryServices />} />
-          <Route path="laundry" element={<OwnerLaundryRequests />} />
-          <Route path="reviews" element={<OwnerReviewManager />} />
-          <Route path="profile" element={<UserProfile title="My Profile" subtitle="Manage your owner account information" showPreferences={false} />} />
-        </Routes>
-      </DashboardLayout>
+        <DashboardLayout
+          title="StayNest"
+          subtitle="Owner Portal"
+          groups={sidebarGroups}
+          pageTitle="Owner Dashboard"
+          headerRight={<AddHostelForm onSuccess={handleRefresh} />}
+        >
+          <Routes>
+            <Route index element={<OwnerAnalytics key={refreshKey} />} />
+            <Route path="properties" element={<OwnerPropertyManager key={refreshKey} />} />
+            <Route path="bookings" element={<OwnerBookingManager />} />
+            <Route path="members" element={<OwnerMembers />} />
+            <Route path="chat" element={<UserChat mode="owner" />} />
+            <Route path="laundry-services" element={<OwnerLaundryServices />} />
+            <Route path="laundry" element={<OwnerLaundryRequests />} />
+            <Route path="reviews" element={<OwnerReviewManager />} />
+            <Route path="profile" element={<UserProfile title="My Profile" subtitle="Manage your owner account information" showPreferences={false} />} />
+          </Routes>
+        </DashboardLayout>
+      </ChatUnreadProvider>
     </ProtectedRoute>
   );
 };

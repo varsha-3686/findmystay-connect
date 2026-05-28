@@ -395,6 +395,48 @@ export type Database = {
         }
         Relationships: []
       }
+      hostel_chat_read_state: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          hostel_id: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          hostel_id: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          hostel_id?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_chat_read_state_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_dm_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_chat_read_state_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hostel_dm_conversations: {
         Row: {
           created_at: string
@@ -1265,6 +1307,12 @@ export type Database = {
       ensure_hostel_dm_conversation: {
         Args: { p_hostel_id: string; p_peer_id: string }
         Returns: string
+      }
+      get_hostel_chat_unread_count: { Args: never; Returns: number }
+      initialize_hostel_chat_read_baseline: { Args: never; Returns: undefined }
+      mark_hostel_chat_read: {
+        Args: { p_conversation_id?: string | null; p_hostel_id: string }
+        Returns: undefined
       }
       has_role: {
         Args: {

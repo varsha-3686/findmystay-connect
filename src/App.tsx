@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AuthCallback from "./pages/AuthCallback";
 import AdminLogin from "./pages/AdminLogin";
 import Listings from "./pages/Listings";
 import ListingDetail from "./pages/ListingDetail";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/listings" element={<Listings />} />

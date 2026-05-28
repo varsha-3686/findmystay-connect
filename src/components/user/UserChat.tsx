@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import { useChatUnreadContext } from "@/contexts/ChatUnreadContext";
 
 interface HostelOption {
   id: string;
@@ -51,6 +52,7 @@ const OwnerBadge = () => (
 
 const UserChat = ({ mode = "resident" }: UserChatProps) => {
   const { user } = useAuth();
+  const chatUnread = useChatUnreadContext();
   const [hostels, setHostels] = useState<HostelOption[]>([]);
   const [selectedHostelId, setSelectedHostelId] = useState("");
   const [tab, setTab] = useState<"group" | "direct">("group");
@@ -160,6 +162,9 @@ const UserChat = ({ mode = "resident" }: UserChatProps) => {
     const convId = data as string;
     setConversationId(convId);
     await loadDmMessages(convId);
+    if (chatUnread) {
+      await chatUnread.markDmRead(selectedHostelId, convId);
+    }
   };
 
   const handleHostelChange = (hostelId: string) => {
@@ -221,6 +226,16 @@ const UserChat = ({ mode = "resident" }: UserChatProps) => {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [groupMessages, dmMessages, tab]);
+
+  useEffect(() => {
+    if (tab !== "group" || !selectedHostelId || !chatUnread) return;
+    void chatUnread.markGroupRead(selectedHostelId);
+  }, [tab, selectedHostelId, groupMessages, chatUnread]);
+
+  useEffect(() => {
+    if (tab !== "direct" || !selectedHostelId || !conversationId || !chatUnread) return;
+    void chatUnread.markDmRead(selectedHostelId, conversationId);
+  }, [tab, selectedHostelId, conversationId, dmMessages, chatUnread]);
 
   const handleSend = async () => {
     const text = draft.trim();
