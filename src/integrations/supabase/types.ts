@@ -331,6 +331,7 @@ export type Database = {
           longitude: number | null
           media_verification_badge: string | null
           owner_id: string
+          owner_public_name: string | null
           price_max: number
           price_min: number
           property_type: string
@@ -355,6 +356,7 @@ export type Database = {
           longitude?: number | null
           media_verification_badge?: string | null
           owner_id: string
+          owner_public_name?: string | null
           price_max?: number
           price_min?: number
           property_type?: string
@@ -379,6 +381,7 @@ export type Database = {
           longitude?: number | null
           media_verification_badge?: string | null
           owner_id?: string
+          owner_public_name?: string | null
           price_max?: number
           price_min?: number
           property_type?: string
@@ -388,6 +391,102 @@ export type Database = {
           verified_status?: Database["public"]["Enums"]["verification_status"]
         }
         Relationships: []
+      }
+      hostel_dm_conversations: {
+        Row: {
+          created_at: string
+          hostel_id: string
+          id: string
+          participant_high: string
+          participant_low: string
+        }
+        Insert: {
+          created_at?: string
+          hostel_id: string
+          id?: string
+          participant_high: string
+          participant_low: string
+        }
+        Update: {
+          created_at?: string
+          hostel_id?: string
+          id?: string
+          participant_high?: string
+          participant_low?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_dm_conversations_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_dm_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_dm_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_dm_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_group_messages: {
+        Row: {
+          body: string
+          created_at: string
+          hostel_id: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          hostel_id: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          hostel_id?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_group_messages_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       laundry_order_items: {
         Row: {
@@ -1160,12 +1259,38 @@ export type Database = {
     Functions: {
       assign_owner_role: { Args: { p_user_id: string }; Returns: undefined }
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      ensure_hostel_dm_conversation: {
+        Args: { p_hostel_id: string; p_peer_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      hostel_user_can_access_chat: {
+        Args: { p_hostel_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      list_active_hostel_peers: {
+        Args: { p_hostel_id: string }
+        Returns: {
+          avatar_url: string | null
+          full_name: string
+          is_hostel_owner: boolean
+          user_id: string
+        }[]
+      }
+      list_active_hostel_roster: {
+        Args: { p_hostel_id: string }
+        Returns: {
+          avatar_url: string | null
+          full_name: string
+          is_hostel_owner: boolean
+          user_id: string
+        }[]
       }
       owner_checkin_booking: {
         Args: { p_booking_id: string }

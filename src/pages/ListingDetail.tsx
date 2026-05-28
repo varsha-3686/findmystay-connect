@@ -55,6 +55,7 @@ interface DbHostel {
   is_active: boolean;
   media_verification_badge: string | null;
   owner_id: string;
+  owner_public_name: string | null;
   contact_phone: string | null;
   contact_email: string | null;
 }
@@ -119,14 +120,18 @@ const ListingDetail = () => {
       ]);
 
       if (hostelRes.data) {
-        setDbHostel(hostelRes.data as any);
-        // Fetch owner name
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("user_id", hostelRes.data.owner_id)
-          .maybeSingle();
-        if (profile?.full_name) setOwnerName(profile.full_name);
+        const hostel = hostelRes.data as DbHostel;
+        setDbHostel(hostel);
+        if (hostel.owner_public_name?.trim()) {
+          setOwnerName(hostel.owner_public_name.trim());
+        } else {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", hostel.owner_id)
+            .maybeSingle();
+          if (profile?.full_name) setOwnerName(profile.full_name);
+        }
       }
       setDbRooms((roomsRes.data || []) as DbRoomType[]);
 

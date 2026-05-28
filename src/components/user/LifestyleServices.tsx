@@ -93,7 +93,7 @@ const LifestyleServices = () => {
           </p>
         )}
         <p className="text-muted-foreground text-[10px] mt-2">
-          Points come from referrals and promotions (e.g. signup with a friend&apos;s code). External links do not add points.
+          Points come from promotions and platform rewards. External links do not add points.
         </p>
       </motion.div>
 

@@ -54,6 +54,7 @@ const FeaturedListings = () => {
           gender,
           verified_status,
           media_verification_badge,
+          owner_public_name,
           hostel_images(image_url, display_order),
           facilities(wifi, ac, food, laundry, gym, parking, pool, power_backup, cctv, geyser, washing_machine, housekeeping, common_kitchen, study_room)
         `,
@@ -88,6 +89,7 @@ const FeaturedListings = () => {
           price: h.price_min ?? 0,
           amenities: facilitiesToAmenities(fac || null),
           mediaVerificationBadge: h.media_verification_badge,
+          ownerPublicName: h.owner_public_name,
         };
       });
 

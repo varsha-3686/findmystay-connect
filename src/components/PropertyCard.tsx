@@ -21,6 +21,7 @@ export interface FeaturedListing {
   price: number;
   amenities: string[];
   mediaVerificationBadge?: string | null;
+  ownerPublicName?: string | null;
 }
 
 const amenityIcons: Record<string, React.ReactNode> = {
@@ -123,6 +124,10 @@ const PropertyCard = ({ listing, index = 0 }: PropertyCardProps) => {
               <MapPin className="w-3.5 h-3.5" />
               <span className="text-sm line-clamp-1">{listing.location}</span>
             </div>
+
+            {listing.ownerPublicName && (
+              <p className="text-xs text-muted-foreground mb-2">Owner: {listing.ownerPublicName}</p>
+            )}
 
             <div className="flex items-center gap-3 mb-3">
               {listing.amenities.slice(0, 3).map((a) => (

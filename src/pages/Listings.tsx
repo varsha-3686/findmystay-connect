@@ -21,6 +21,7 @@ interface HostelListing {
   gender: string;
   verified_status: string;
   media_verification_badge: string | null;
+  owner_public_name?: string | null;
   image_url?: string | null;
   facilities: { wifi?: boolean; ac?: boolean; food?: boolean; laundry?: boolean; gym?: boolean; parking?: boolean } | null;
 }
@@ -54,6 +55,7 @@ const Listings = () => {
         .select(`
           id, hostel_name, location, city, price_min, price_max, rating, review_count,
           property_type, gender, verified_status, media_verification_badge,
+          owner_public_name,
           hostel_images(image_url, display_order),
           facilities(wifi, ac, food, laundry, gym, parking)
         `)
@@ -172,10 +174,13 @@ const Listings = () => {
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-muted-foreground mb-3">
+                          <div className="flex items-center gap-1 text-muted-foreground mb-2">
                             <MapPin className="w-3.5 h-3.5" />
                             <span className="text-sm line-clamp-1">{hostel.location}, {hostel.city}</span>
                           </div>
+                          {hostel.owner_public_name && (
+                            <p className="text-xs text-muted-foreground mb-2">Owner: {hostel.owner_public_name}</p>
+                          )}
                           {amenities.length > 0 && (
                             <div className="flex items-center gap-3 mb-3">
                               {amenities.slice(0, 3).map((a) => (

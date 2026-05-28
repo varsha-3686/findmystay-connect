@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import {
   BarChart3, Building2, Users, Star,
-  Bed, ShirtIcon, WashingMachine, User
+  Bed, ShirtIcon, WashingMachine, User, MessageSquare,
 } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -15,6 +15,7 @@ import OwnerLaundryRequests from "@/components/owner/OwnerLaundryRequests";
 import OwnerLaundryServices from "@/components/owner/OwnerLaundryServices";
 import AddHostelForm from "@/components/owner/AddHostelForm";
 import UserProfile from "@/components/user/UserProfile";
+import UserChat from "@/components/user/UserChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,6 +52,7 @@ const OwnerDashboard = () => {
       { title: "Properties", url: "/owner/properties", icon: Building2 },
       { title: "Bookings", url: "/owner/bookings", icon: Bed },
       { title: "Members", url: "/owner/members", icon: Users },
+      { title: "Chat", url: "/owner/chat", icon: MessageSquare },
       ...(hasLaundryProperties
         ? [
             { title: "Laundry Services", url: "/owner/laundry-services", icon: WashingMachine },
@@ -90,6 +92,7 @@ const OwnerDashboard = () => {
           <Route path="properties" element={<OwnerPropertyManager key={refreshKey} />} />
           <Route path="bookings" element={<OwnerBookingManager />} />
           <Route path="members" element={<OwnerMembers />} />
+          <Route path="chat" element={<UserChat mode="owner" />} />
           <Route path="laundry-services" element={<OwnerLaundryServices />} />
           <Route path="laundry" element={<OwnerLaundryRequests />} />
           <Route path="reviews" element={<OwnerReviewManager />} />

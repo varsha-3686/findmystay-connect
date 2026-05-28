@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Building2, MapPin, LocateFixed, IndianRupee, Users, FileText, Loader2, X, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CategoryPhotoUpload, { validateCategoryImages } from "@/components/owner/CategoryPhotoUpload";
@@ -61,6 +61,7 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
     longitude: "",
     contact_phone: "",
     contact_email: "",
+    owner_public_name: "",
   });
   const [facilities, setFacilities] = useState<string[]>([]);
   const [roomConfig, setRoomConfig] = useState<RoomConfig>(createInitialRoomConfig());
@@ -68,6 +69,24 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
     () => ROOM_TYPE_OPTIONS.filter((roomType) => roomConfig[roomType].enabled),
     [roomConfig]
   );
+
+  useEffect(() => {
+    if (!open || !user) return;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.full_name) {
+          setForm((prev) => (
+            prev.owner_public_name.trim()
+              ? prev
+              : { ...prev, owner_public_name: data.full_name || "" }
+          ));
+        }
+      });
+  }, [open, user]);
 
   const toggleFacility = (f: string) => {
     setFacilities(prev => prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]);
@@ -154,6 +173,7 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
           longitude: form.longitude ? parseFloat(form.longitude) : null,
           contact_phone: form.contact_phone.trim() || null,
           contact_email: form.contact_email.trim() || null,
+          owner_public_name: form.owner_public_name.trim() || null,
         })
         .select("id")
         .single();
@@ -226,6 +246,7 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
         longitude: "",
         contact_phone: "",
         contact_email: "",
+        owner_public_name: "",
       });
       setFacilities([]);
       setRoomConfig(createInitialRoomConfig());
@@ -293,6 +314,15 @@ const AddHostelForm = ({ onSuccess }: AddHostelFormProps) => {
                   onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Listed contact name</Label>
+              <Input
+                placeholder="Name shown on your public listing"
+                className="rounded-xl"
+                value={form.owner_public_name}
+                onChange={(e) => setForm({ ...form, owner_public_name: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="space-y-1.5">
