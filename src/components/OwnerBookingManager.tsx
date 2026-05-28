@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle2, XCircle, Loader2, MessageSquare, Phone, Mail, Calendar, LogIn } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, MessageSquare, Phone, Mail, Calendar, LogIn, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ interface Booking {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  address: string | null;
   message: string | null;
   move_in_date: string | null;
   status: string;
@@ -184,6 +185,12 @@ const OwnerBookingManager = () => {
                 )}
                 {booking.phone && (
                   <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{booking.phone}</span>
+                )}
+                {booking.address && (
+                  <span className="flex items-start gap-1 col-span-2 sm:col-span-3">
+                    <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                    <span className="line-clamp-2">{booking.address}</span>
+                  </span>
                 )}
                 {booking.move_in_date && (
                   <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(booking.move_in_date).toLocaleDateString()}</span>

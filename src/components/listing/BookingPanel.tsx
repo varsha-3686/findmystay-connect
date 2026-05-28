@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Calendar, Users, Shield, Loader2, BedDouble } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Users, Shield, Loader2, BedDouble, User, Phone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { fetchOwnProfileContact, syncProfileFromBookingIfEmpty } from "@/lib/bookingContact";
 
 interface Room {
   id: string;
@@ -35,8 +36,26 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
   const [checkInDate, setCheckInDate] = useState("");
   const [occupants, setOccupants] = useState("1");
   const [message, setMessage] = useState("");
+  const [contact, setContact] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchOwnProfileContact(user.id).then((profileContact) => {
+      setContact((prev) => ({
+        fullName: prev.fullName || profileContact.fullName,
+        phone: prev.phone || profileContact.phone,
+        email: prev.email || profileContact.email || user.email || "",
+        address: prev.address,
+      }));
+    });
+  }, [user]);
 
   const selectedRoomData = rooms.find(r => r.id === selectedRoom);
   const displayPrice = selectedRoomData?.price || priceMin;
@@ -62,6 +81,18 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
       toast.error("Please select a room type before booking.");
       return;
     }
+    if (!contact.fullName.trim()) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+    if (!contact.phone.trim()) {
+      toast.error("Please enter your phone number.");
+      return;
+    }
+    if (!contact.address.trim()) {
+      toast.error("Please enter your address.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -69,9 +100,10 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
         user_id: user.id,
         hostel_id: hostelId,
         room_type_id: selectedRoom,
-        full_name: user.user_metadata?.full_name || "",
-        email: user.email || null,
-        phone: user.user_metadata?.phone || null,
+        full_name: contact.fullName.trim(),
+        email: contact.email.trim() || null,
+        phone: contact.phone.trim(),
+        address: contact.address.trim(),
         move_in_date: checkInDate,
         message: message || null,
         status: "pending" as any,
@@ -85,6 +117,12 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
         }
         throw new Error(error.details ? `${error.message} (${error.details})` : error.message);
       }
+
+      await syncProfileFromBookingIfEmpty(user.id, {
+        fullName: contact.fullName,
+        phone: contact.phone,
+      });
+
       setSubmitted(true);
       toast.success("Booking request submitted! The owner will review it shortly.");
     } catch (err: any) {
@@ -175,6 +213,60 @@ const BookingPanel = ({ hostelId, hostelName, priceMin, priceMax, rooms, isActiv
             <SelectItem value="3">3 People</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-3 pt-1 border-t border-border/50">
+        <p className="text-sm font-medium text-foreground">Your contact details</p>
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Full Name</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Your full name"
+              className="pl-10 rounded-xl h-11"
+              value={contact.fullName}
+              onChange={(e) => setContact({ ...contact, fullName: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Phone</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="+91 XXXXX XXXXX"
+              className="pl-10 rounded-xl h-11"
+              value={contact.phone}
+              onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Email</Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="email"
+              placeholder="you@example.com"
+              className="pl-10 rounded-xl h-11"
+              value={contact.email}
+              onChange={(e) => setContact({ ...contact, email: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs text-muted-foreground">Address</Label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+            <Textarea
+              placeholder="Your current home address"
+              className="pl-10 rounded-xl min-h-[72px] resize-none"
+              value={contact.address}
+              onChange={(e) => setContact({ ...contact, address: e.target.value })}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Shared with the property owner only.</p>
+        </div>
       </div>
 
       <div className="space-y-2">

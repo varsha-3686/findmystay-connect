@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, User, Phone, Mail, MessageSquare, Shield, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Phone, Mail, MessageSquare, Shield, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchOwnProfileContact, syncProfileFromBookingIfEmpty } from "@/lib/bookingContact";
 
 interface HostelInfo {
   id: string;
@@ -44,10 +45,23 @@ const BookingRequest = () => {
     fullName: "",
     phone: "",
     email: "",
+    address: "",
     moveInDate: "",
     occupancy: "",
     message: "",
   });
+
+  useEffect(() => {
+    if (!user) return;
+    fetchOwnProfileContact(user.id).then((contact) => {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || contact.fullName,
+        phone: prev.phone || contact.phone,
+        email: prev.email || contact.email || user.email || "",
+      }));
+    });
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -148,9 +162,10 @@ const BookingRequest = () => {
         user_id: user.id,
         hostel_id: hostel.id,
         room_type_id: selectedRoomType,
-        full_name: formData.fullName,
-        phone: formData.phone,
-        email: formData.email,
+        full_name: formData.fullName.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim(),
+        address: formData.address.trim(),
         move_in_date: formData.moveInDate || null,
         message: formData.message || null,
         status: "pending" as any,
@@ -164,6 +179,11 @@ const BookingRequest = () => {
         }
         throw error;
       }
+
+      await syncProfileFromBookingIfEmpty(user.id, {
+        fullName: formData.fullName,
+        phone: formData.phone,
+      });
 
       setSubmitted(true);
       toast.success("Booking request submitted!");
@@ -249,6 +269,21 @@ const BookingRequest = () => {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input type="email" placeholder="you@example.com" className="pl-10 h-11 rounded-xl" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Address</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <Textarea
+                      placeholder="Your current home address"
+                      className="pl-10 rounded-xl min-h-[80px] resize-none"
+                      required
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Shared with the property owner only.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, Loader2, Phone, Mail, Calendar, UserX } from "lucide-react";
+import { Users, Loader2, Phone, Mail, Calendar, UserX, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,19 @@ interface Member {
   full_name: string;
   email: string | null;
   phone: string | null;
+  address: string | null;
   room_type: string | null;
   booking_status: string | null;
+}
+
+interface BookingContactRow {
+  id: string;
+  status: string;
+  room_type_id: string | null;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
 }
 
 const OwnerMembers = () => {
@@ -64,28 +75,23 @@ const OwnerMembers = () => {
       return;
     }
 
-    const userIds = [...new Set(memberRows.map((m) => m.user_id))];
-
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, email, phone")
-      .in("user_id", userIds);
-
-    const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
     const bookingIds = [...new Set(memberRows.map((m) => m.booking_id).filter(Boolean))] as string[];
     const { data: bookings } = bookingIds.length
-      ? await supabase.from("bookings").select("id, status, room_type_id").in("id", bookingIds)
-      : { data: [] as any[] };
-    const bookingMap = new Map((bookings || []).map((b: any) => [b.id, b]));
-    const roomTypeIds = [...new Set((bookings || []).map((b: any) => b.room_type_id).filter(Boolean))] as string[];
+      ? await supabase
+          .from("bookings")
+          .select("id, status, room_type_id, full_name, email, phone, address")
+          .in("id", bookingIds)
+      : { data: [] as BookingContactRow[] };
+    const bookingMap = new Map((bookings || []).map((b) => [b.id, b]));
+    const roomTypeIds = [...new Set((bookings || []).map((b) => b.room_type_id).filter(Boolean))] as string[];
     const { data: roomTypes } = roomTypeIds.length
       ? await supabase.from("room_types").select("id, type").in("id", roomTypeIds)
-      : { data: [] as any[] };
-    const roomTypeMap = new Map((roomTypes || []).map((r: any) => [r.id, r.type]));
+      : { data: [] as { id: string; type: string }[] };
+    const roomTypeMap = new Map((roomTypes || []).map((r) => [r.id, r.type]));
 
     setMembers(
       memberRows.map((m) => {
-        const profile = profileMap.get(m.user_id);
+        const booking = m.booking_id ? bookingMap.get(m.booking_id) : undefined;
         return {
           id: m.id,
           user_id: m.user_id,
@@ -95,11 +101,12 @@ const OwnerMembers = () => {
           status: m.status,
           hostel_name: hostelMap.get(m.hostel_id)?.name || "Unknown",
           hostel_gender: hostelMap.get(m.hostel_id)?.gender || null,
-          full_name: profile?.full_name || "Unknown",
-          email: profile?.email || null,
-          phone: profile?.phone || null,
-          room_type: m.booking_id ? roomTypeMap.get(bookingMap.get(m.booking_id)?.room_type_id) || null : null,
-          booking_status: m.booking_id ? bookingMap.get(m.booking_id)?.status || null : null,
+          full_name: booking?.full_name?.trim() || "Unknown",
+          email: booking?.email?.trim() || null,
+          phone: booking?.phone?.trim() || null,
+          address: booking?.address?.trim() || null,
+          room_type: booking?.room_type_id ? roomTypeMap.get(booking.room_type_id) || null : null,
+          booking_status: booking?.status || null,
         };
       })
     );
@@ -128,6 +135,80 @@ const OwnerMembers = () => {
     ? `remove ${removeTarget.full_name}`.toLowerCase()
     : "";
 
+  const renderMemberRow = (member: Member, inactive = false) => (
+    <TableRow key={member.id} className={inactive ? "opacity-50" : undefined}>
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-heading font-bold text-xs shrink-0 ${inactive ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"}`}>
+            {member.full_name[0]?.toUpperCase() || "?"}
+          </div>
+          <span className="font-medium">{member.full_name}</span>
+        </div>
+      </TableCell>
+      <TableCell className="text-sm">
+        {member.phone ? (
+          <span className="inline-flex items-center gap-1 text-foreground">
+            <Phone className="w-3 h-3" />
+            {member.phone}
+          </span>
+        ) : (
+          <span className="text-muted-foreground italic">Not provided</span>
+        )}
+      </TableCell>
+      <TableCell className="text-sm max-w-[180px]">
+        {member.address ? (
+          <span className="inline-flex items-start gap-1 text-foreground">
+            <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+            <span className="line-clamp-2">{member.address}</span>
+          </span>
+        ) : (
+          <span className="text-muted-foreground italic">Not provided</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <div className="space-y-1 text-xs text-muted-foreground">
+          {member.email ? (
+            <div className="flex items-center gap-1"><Mail className="w-3 h-3" />{member.email}</div>
+          ) : (
+            <span className="italic">No email</span>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="text-sm">{member.hostel_name}</TableCell>
+      <TableCell className="text-sm capitalize">{member.room_type || "N/A"}</TableCell>
+      <TableCell className="text-sm capitalize">{member.hostel_gender || "N/A"}</TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        <div className="flex items-center gap-1">
+          {!inactive && <Calendar className="w-3 h-3" />}
+          {new Date(member.joined_at).toLocaleDateString()}
+        </div>
+      </TableCell>
+      <TableCell>
+        <Badge className={inactive ? "capitalize" : "bg-accent/10 text-accent capitalize"} variant={inactive ? "secondary" : "default"}>
+          {member.status}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        {!inactive && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1 text-destructive hover:text-destructive"
+            disabled={processing === member.id}
+            onClick={() => { setRemoveTarget(member); setConfirmText(""); }}
+          >
+            {processing === member.id ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <UserX className="w-3.5 h-3.5" />
+            )}
+            Remove
+          </Button>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -147,7 +228,7 @@ const OwnerMembers = () => {
             <Users className="w-5 h-5 text-primary" />
             Hostel Members
           </h2>
-          <p className="text-sm text-muted-foreground">Users currently living in your hostels</p>
+          <p className="text-sm text-muted-foreground">Contact details from each member&apos;s booking</p>
         </div>
         <Badge variant="secondary" className="gap-1.5">
           {activeMembers.length} Active
@@ -161,12 +242,13 @@ const OwnerMembers = () => {
           <p className="text-sm text-muted-foreground">Members are added when you check in a booking.</p>
         </div>
       ) : (
-        <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border/50 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>User Name</TableHead>
                 <TableHead>Mobile</TableHead>
+                <TableHead>Address</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Hostel</TableHead>
                 <TableHead>Room Type</TableHead>
@@ -177,100 +259,8 @@ const OwnerMembers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeMembers.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-heading font-bold text-primary text-xs shrink-0">
-                        {member.full_name[0]?.toUpperCase() || "?"}
-                      </div>
-                      <span className="font-medium">{member.full_name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {member.phone ? (
-                      <span className="inline-flex items-center gap-1 text-foreground">
-                        <Phone className="w-3 h-3" />
-                        {member.phone}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground italic">Not provided</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      {member.email && <div className="flex items-center gap-1"><Mail className="w-3 h-3" />{member.email}</div>}
-                      {!member.email && <span className="italic">No email</span>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{member.hostel_name}</TableCell>
-                  <TableCell className="text-sm capitalize">{member.room_type || "N/A"}</TableCell>
-                  <TableCell className="text-sm capitalize">{member.hostel_gender || "N/A"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(member.joined_at).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className="bg-accent/10 text-accent capitalize">{member.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1 text-destructive hover:text-destructive"
-                      disabled={processing === member.id}
-                      onClick={() => { setRemoveTarget(member); setConfirmText(""); }}
-                    >
-                      {processing === member.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <UserX className="w-3.5 h-3.5" />
-                      )}
-                      Remove
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {inactiveMembers.map((member) => (
-                <TableRow key={member.id} className="opacity-50">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-heading font-bold text-muted-foreground text-xs shrink-0">
-                        {member.full_name[0]?.toUpperCase() || "?"}
-                      </div>
-                      <span className="font-medium">{member.full_name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {member.phone ? (
-                      <span className="inline-flex items-center gap-1 text-foreground">
-                        <Phone className="w-3 h-3" />
-                        {member.phone}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground italic">Not provided</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      {member.email && <div className="flex items-center gap-1"><Mail className="w-3 h-3" />{member.email}</div>}
-                      {!member.email && <span className="italic">No email</span>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{member.hostel_name}</TableCell>
-                  <TableCell className="text-sm capitalize">{member.room_type || "N/A"}</TableCell>
-                  <TableCell className="text-sm capitalize">{member.hostel_gender || "N/A"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(member.joined_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="capitalize">{member.status}</Badge>
-                  </TableCell>
-                  <TableCell />
-                </TableRow>
-              ))}
+              {activeMembers.map((member) => renderMemberRow(member))}
+              {inactiveMembers.map((member) => renderMemberRow(member, true))}
             </TableBody>
           </Table>
         </div>
