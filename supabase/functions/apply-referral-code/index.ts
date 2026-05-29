@@ -7,9 +7,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const REFEREE_POINTS = 50;
-const REFERRER_POINTS = 50;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -83,12 +80,11 @@ serve(async (req) => {
       referrer_user_id: referrerId,
       referred_user_id: user.id,
       referral_code: referralCode,
-      reward_points: REFEREE_POINTS,
-      status: "completed",
+      reward_points: 0,
+      status: "pending",
     });
 
     if (insertErr) {
-      // Unique index on referred_user_id ensures retries/concurrent calls are idempotent.
       if (insertErr.code === "23505") {
         return new Response(
           JSON.stringify({ success: true, already_redeemed: true }),
@@ -102,43 +98,11 @@ serve(async (req) => {
       });
     }
 
-    async function addPoints(uid: string, pts: number) {
-      const { data: w } = await admin.from("user_wallet").select("reward_points").eq("user_id", uid).maybeSingle();
-      const next = (w?.reward_points ?? 0) + pts;
-      if (w) {
-        const { error: updateErr } = await admin
-          .from("user_wallet")
-          .update({
-            reward_points: next,
-            cash_value: next / 10,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("user_id", uid);
-        if (updateErr) {
-          console.error("Failed to update wallet for", uid, updateErr);
-          throw new Error(`Wallet update failed: ${updateErr.message}`);
-        }
-      } else {
-        const { error: insertErr } = await admin.from("user_wallet").insert({
-          user_id: uid,
-          reward_points: pts,
-          cash_value: pts / 10,
-        });
-        if (insertErr) {
-          console.error("Failed to insert wallet for", uid, insertErr);
-          throw new Error(`Wallet insert failed: ${insertErr.message}`);
-        }
-      }
-    }
-
-    await addPoints(user.id, REFEREE_POINTS);
-    await addPoints(referrerId, REFERRER_POINTS);
-
     return new Response(
       JSON.stringify({
         success: true,
-        referee_points: REFEREE_POINTS,
-        referrer_points: REFERRER_POINTS,
+        message:
+          "Referral linked. Your referrer will receive ₹100 when you check in to your hostel.",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

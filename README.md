@@ -34,3 +34,29 @@ supabase functions deploy complete-registration
 1. **Email sign-up:** form → check-email screen → click Supabase confirm link → success screen on `/auth/callback` → welcome email → Continue → dashboard/owner portal.
 2. **Mobile sign-up (no email):** OTP verify → registration success screen → no welcome email.
 3. **Mobile sign-up (optional email):** OTP verify → success screen mentions welcome email → email received.
+
+## Referral reward on check-in
+
+The referrer (code owner) receives ₹100 when a referred friend is **checked in** to their hostel booking.
+
+### Database
+
+Run in **Supabase SQL Editor** (project `anjmawtmkbjneplprinv`):
+
+1. `supabase/migrations/20260429000000_referral_booking_reward.sql` (if not applied yet)
+2. `supabase/migrations/20260429100000_referral_referrer_checkin_reward.sql` — replaces reward logic to credit `referrer_user_id` on `checked_in` and backfills missed pending referrals
+
+The second migration ends with `NOTIFY pgrst, 'reload schema';`.
+
+### Edge function
+
+```bash
+supabase functions deploy apply-referral-code
+```
+
+### Test flow
+
+1. User A shares referral code → User B signs up with code → referral row `status = pending`
+2. User B books → owner approves → **referrer wallet unchanged**
+3. Owner checks in User B → User A wallet +₹100, referral `status = rewarded`
+4. Second check-in or booking → no duplicate credit

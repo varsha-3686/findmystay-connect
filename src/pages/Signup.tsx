@@ -20,6 +20,8 @@ import {
 
   Home,
 
+  Gift,
+
   Loader2,
 
   KeyRound,
@@ -84,7 +86,12 @@ import { invokeCompleteRegistration } from "@/lib/completeRegistration";
 
 import { getEdgeFunctionErrorMessage } from "@/lib/edgeFunctionErrors";
 
-import { stashReferralCodeFromUrl, applyPendingReferralCode } from "@/lib/pendingReferral";
+import {
+  stashReferralCodeFromUrl,
+  applyPendingReferralCode,
+  getPendingReferralCode,
+  setPendingReferralCode,
+} from "@/lib/pendingReferral";
 
 
 
@@ -134,6 +141,8 @@ const Signup = () => {
 
   const [welcomeEmailAddress, setWelcomeEmailAddress] = useState<string | null>(null);
 
+  const [referralCode, setReferralCode] = useState("");
+
 
 
   const verifyingRef = useRef(false);
@@ -159,6 +168,12 @@ const Signup = () => {
   useEffect(() => {
 
     stashReferralCodeFromUrl(searchParams.get("ref"), searchParams.get("coupon"));
+
+    const fromUrl = searchParams.get("coupon") || searchParams.get("ref") || "";
+
+    const stored = getPendingReferralCode();
+
+    setReferralCode((fromUrl || stored).trim());
 
   }, [searchParams]);
 
@@ -277,6 +292,8 @@ const Signup = () => {
   const handleSubmitDetails = async (e: React.FormEvent) => {
 
     e.preventDefault();
+
+    setPendingReferralCode(referralCode);
 
     if (submitting || !validateDetails()) return;
 
@@ -949,6 +966,54 @@ const Signup = () => {
                     </>
 
                   )}
+
+
+
+                  <div className="space-y-1.5">
+
+                    <Label className="text-sm font-medium" style={{ color: "#2C2C2C" }}>
+
+                      Referral code <span className="text-xs font-normal text-[#9B9B9B]">(optional)</span>
+
+                    </Label>
+
+                    <div className="relative">
+
+                      <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9B9B9B]" />
+
+                      <Input
+
+                        type="text"
+
+                        placeholder="Friend's referral code"
+
+                        className="pl-10 h-11 rounded-xl border-[#E8E0D8] uppercase"
+
+                        value={referralCode}
+
+                        onChange={(e) => {
+
+                          const v = e.target.value.toUpperCase();
+
+                          setReferralCode(v);
+
+                          setPendingReferralCode(v);
+
+                        }}
+
+                        disabled={submitting}
+
+                      />
+
+                    </div>
+
+                    <p className="text-xs" style={{ color: "#9B9B9B" }}>
+
+                      Have a friend&apos;s code? Enter it so they earn ₹100 when you check in to your hostel.
+
+                    </p>
+
+                  </div>
 
 
 

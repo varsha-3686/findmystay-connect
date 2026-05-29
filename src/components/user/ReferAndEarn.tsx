@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Copy, Share2, Gift, Users, Wallet, Trophy, CheckCircle, ArrowDownToLine, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Copy, Gift, Users, Wallet, Trophy, CheckCircle, ArrowDownToLine, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,15 +9,55 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
+
+interface ReferralRow {
+  id: string;
+  referral_code: string;
+  referred_user_id: string | null;
+  reward_points: number;
+  status: string;
+  created_at: string;
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to execCommand fallback
+  }
+
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 const ReferAndEarn = () => {
   const { user } = useAuth();
   const [referralCode, setReferralCode] = useState("");
   const [wallet, setWallet] = useState({ reward_points: 0, cash_value: 0 });
-  const [referrals, setReferrals] = useState<any[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const copiedLinkTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copiedCodeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
@@ -29,16 +69,15 @@ const ReferAndEarn = () => {
   }, [user]);
 
   const initReferral = async () => {
-    // Generate or fetch referral code
     const code = `SN${user!.id.replace(/-/g, "").slice(0, 10).toUpperCase()}`;
     setReferralCode(code);
 
-    // Ensure referral row exists
     const { data: existing } = await supabase
       .from("referrals")
-      .select("*")
+      .select("id")
       .eq("referrer_user_id", user!.id)
       .eq("referral_code", code)
+      .is("referred_user_id", null)
       .maybeSingle();
 
     if (!existing) {
@@ -53,16 +92,14 @@ const ReferAndEarn = () => {
       }
     }
 
-    // Fetch all referrals
     const { data: refs } = await supabase
       .from("referrals")
       .select("*")
       .eq("referrer_user_id", user!.id)
       .order("created_at", { ascending: false });
 
-    setReferrals(refs || []);
+    setReferrals((refs || []) as ReferralRow[]);
 
-    // Fetch or create wallet
     const { data: w } = await supabase
       .from("user_wallet")
       .select("*")
@@ -81,17 +118,50 @@ const ReferAndEarn = () => {
     setLoading(false);
   };
 
-  const referralLink = `https://staynest.app/signup?ref=${referralCode}`;
+  const referralLink =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/signup?ref=${referralCode}`
+      : `https://staynest.app/signup?ref=${referralCode}`;
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
+  const invitedFriends = referrals.filter((r) => r.referred_user_id != null);
+
+  const resetCopiedAfter = (
+    setCopied: (v: boolean) => void,
+    timeoutRef: { current: ReturnType<typeof setTimeout> | null }
+  ) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setCopied(false);
+      timeoutRef.current = null;
+    }, 2000);
+  };
+
+  const copyLink = async () => {
+    const ok = await copyTextToClipboard(referralLink);
+    if (!ok) {
+      toast.error("Could not copy. Please copy manually.");
+      return;
+    }
+    setCopiedLink(true);
     toast.success("Referral link copied!");
-    setTimeout(() => setCopied(false), 2000);
+    resetCopiedAfter(setCopiedLink, copiedLinkTimeoutRef);
+  };
+
+  const copyCode = async () => {
+    const ok = await copyTextToClipboard(referralCode);
+    if (!ok) {
+      toast.error("Could not copy. Please copy manually.");
+      return;
+    }
+    setCopiedCode(true);
+    toast.success("Referral code copied!");
+    resetCopiedAfter(setCopiedCode, copiedCodeTimeoutRef);
   };
 
   const shareVia = (platform: string) => {
-    const msg = encodeURIComponent(`Join StayNest and find your perfect hostel! Use my referral link: ${referralLink}`);
+    const msg = encodeURIComponent(
+      `Join StayNest with my referral link. I earn ₹100 when you check in to your hostel! ${referralLink}`
+    );
     const urls: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${msg}`,
       telegram: `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${msg}`,
@@ -101,7 +171,7 @@ const ReferAndEarn = () => {
   };
 
   const stats = [
-    { label: "Total Invites", value: referrals.length, icon: Users, color: "text-primary" },
+    { label: "Friends Invited", value: invitedFriends.length, icon: Users, color: "text-primary" },
     { label: "Points Earned", value: wallet.reward_points, icon: Trophy, color: "text-accent" },
     { label: "Wallet Balance", value: `₹${Number(wallet.cash_value).toFixed(0)}`, icon: Wallet, color: "text-verified" },
   ];
@@ -116,7 +186,6 @@ const ReferAndEarn = () => {
 
   return (
     <div className="space-y-5">
-      {/* Header Card */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -124,32 +193,52 @@ const ReferAndEarn = () => {
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-foreground/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-        
+
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <Gift className="w-5 h-5" />
             <h3 className="font-heading font-bold text-lg">Refer & Earn</h3>
           </div>
-          <p className="text-sm opacity-80 mb-4">Invite friends & earn rewards. 100 points = ₹10!</p>
+          <p className="text-sm opacity-80 mb-4">
+            Share your link. You earn ₹100 when a friend signs up with your code and checks in to their hostel.
+          </p>
 
-          {/* Referral Code */}
-          <div className="bg-primary-foreground/15 backdrop-blur-sm rounded-xl p-3 flex items-center justify-between mb-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider opacity-60">Your Referral Code</p>
+          <div className="bg-primary-foreground/15 backdrop-blur-sm rounded-xl p-3 mb-3">
+            <p className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Your Referral Code</p>
+            <div className="flex items-center justify-between gap-2">
               <p className="font-heading font-extrabold text-lg tracking-wider">{referralCode}</p>
+              <Button
+                size="sm"
+                variant="hero-outline"
+                className="gap-1.5 text-xs shrink-0"
+                onClick={copyCode}
+                disabled={copiedCode}
+                aria-live="polite"
+                aria-label={copiedCode ? "Referral code copied to clipboard" : "Copy referral code"}
+              >
+                {copiedCode ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedCode ? "Copied" : "Copy Code"}
+              </Button>
             </div>
+          </div>
+
+          <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-3 mb-4">
+            <p className="text-[10px] uppercase tracking-wider opacity-60 mb-1">Your Referral Link</p>
+            <p className="text-xs break-all opacity-90 mb-2">{referralLink}</p>
             <Button
               size="sm"
               variant="hero-outline"
-              className="gap-1.5 text-xs"
+              className="gap-1.5 text-xs w-full"
               onClick={copyLink}
+              disabled={copiedLink}
+              aria-live="polite"
+              aria-label={copiedLink ? "Referral link copied to clipboard" : "Copy referral link"}
             >
-              {copied ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? "Copied" : "Copy Link"}
+              {copiedLink ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedLink ? "Link Copied" : "Copy Link"}
             </Button>
           </div>
 
-          {/* Share Buttons */}
           <div className="flex gap-2">
             <Button size="sm" variant="hero-outline" className="text-xs flex-1" onClick={() => shareVia("whatsapp")}>
               WhatsApp
@@ -164,7 +253,6 @@ const ReferAndEarn = () => {
         </div>
       </motion.div>
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {stats.map((stat, i) => (
           <motion.div
@@ -181,7 +269,6 @@ const ReferAndEarn = () => {
         ))}
       </div>
 
-      {/* Withdraw Button */}
       <div className="flex justify-end">
         <Button
           variant="outline"
@@ -194,38 +281,37 @@ const ReferAndEarn = () => {
         </Button>
       </div>
 
-      {/* Reward Tiers */}
       <div className="bg-card rounded-2xl border border-border/50 shadow-card p-4">
         <h4 className="font-heading font-semibold text-sm mb-3 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-accent" /> Reward Tiers
+          <Trophy className="w-4 h-4 text-accent" /> How it works
         </h4>
         <div className="space-y-2 text-xs">
           {[
-            { action: "Friend joins StayNest", points: "+50 pts" },
-            { action: "Referred user books hostel", points: "+200 pts" },
-            { action: "Owner registers via referral", points: "+500 pts" },
+            { action: "Friend signs up with your code", reward: "Linked" },
+            { action: "Friend checks in to their hostel", reward: "You get ₹100" },
           ].map((tier) => (
             <div key={tier.action} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
               <span className="text-muted-foreground">{tier.action}</span>
-              <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px]">{tier.points}</Badge>
+              <Badge className="bg-accent/10 text-accent border-accent/30 text-[10px]">{tier.reward}</Badge>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Referral History */}
-      {referrals.length > 1 && (
+      {invitedFriends.length > 0 && (
         <div className="bg-card rounded-2xl border border-border/50 shadow-card p-4">
           <h4 className="font-heading font-semibold text-sm mb-3">Referral History</h4>
           <div className="space-y-2 text-xs">
-            {referrals.slice(0, 10).map((ref) => (
+            {invitedFriends.slice(0, 10).map((ref) => (
               <div key={ref.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
-                <span className="text-muted-foreground">{ref.referral_code}</span>
+                <span className="text-muted-foreground font-mono">{ref.referral_code}</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant={ref.status === "active" ? "default" : "secondary"} className="text-[10px]">
-                    {ref.status}
+                  <Badge
+                    variant={ref.status === "rewarded" ? "default" : "secondary"}
+                    className="text-[10px] capitalize"
+                  >
+                    {ref.status === "rewarded" ? "Booked" : ref.status}
                   </Badge>
-                  <span className="font-heading font-semibold text-primary">+{ref.reward_points}</span>
                 </div>
               </div>
             ))}

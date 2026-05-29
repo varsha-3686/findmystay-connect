@@ -870,29 +870,35 @@ export type Database = {
       }
       referrals: {
         Row: {
+          booking_reward_paid_at: string | null
           created_at: string
           id: string
           referral_code: string
           referred_user_id: string | null
           referrer_user_id: string
+          reward_booking_id: string | null
           reward_points: number
           status: string
         }
         Insert: {
+          booking_reward_paid_at?: string | null
           created_at?: string
           id?: string
           referral_code: string
           referred_user_id?: string | null
           referrer_user_id: string
+          reward_booking_id?: string | null
           reward_points?: number
           status?: string
         }
         Update: {
+          booking_reward_paid_at?: string | null
           created_at?: string
           id?: string
           referral_code?: string
           referred_user_id?: string | null
           referrer_user_id?: string
+          reward_booking_id?: string | null
           reward_points?: number
           status?: string
         }

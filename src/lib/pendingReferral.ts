@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 export const PENDING_REFERRAL_STORAGE_KEY = "staynest_pending_referral";
 
-/** Persist ?ref= or ?coupon= for use after OTP completes. */
+/** Persist ?ref= or ?coupon= for use after signup completes. */
 export function stashReferralCodeFromUrl(ref: string | null, coupon: string | null) {
   const code = (coupon || ref || "").trim();
   if (code) {
@@ -11,9 +11,22 @@ export function stashReferralCodeFromUrl(ref: string | null, coupon: string | nu
   }
 }
 
+export function getPendingReferralCode(): string {
+  return sessionStorage.getItem(PENDING_REFERRAL_STORAGE_KEY)?.trim() || "";
+}
+
+export function setPendingReferralCode(code: string) {
+  const trimmed = code.trim();
+  if (trimmed) {
+    sessionStorage.setItem(PENDING_REFERRAL_STORAGE_KEY, trimmed);
+  } else {
+    sessionStorage.removeItem(PENDING_REFERRAL_STORAGE_KEY);
+  }
+}
+
 /** Call once after session exists; idempotent on server for already-redeemed users. */
 export async function applyPendingReferralCode(): Promise<void> {
-  const code = sessionStorage.getItem(PENDING_REFERRAL_STORAGE_KEY)?.trim();
+  const code = getPendingReferralCode();
   if (!code) return;
 
   const {
@@ -27,14 +40,27 @@ export async function applyPendingReferralCode(): Promise<void> {
   });
 
   if (error) {
+    const msg = error.message || "Could not apply referral code";
+    if (!/invalid referral/i.test(msg)) {
+      toast.error(msg);
+    }
     console.warn("apply-referral-code", error);
+    return;
+  }
+
+  const payload = data as { error?: string; already_redeemed?: boolean; success?: boolean };
+
+  if (payload?.error) {
+    if (!/invalid referral/i.test(payload.error)) {
+      toast.error(payload.error);
+    }
     return;
   }
 
   sessionStorage.removeItem(PENDING_REFERRAL_STORAGE_KEY);
 
-  if ((data as { already_redeemed?: boolean })?.already_redeemed) return;
-  if ((data as { success?: boolean })?.success) {
-    toast.success("Referral bonus applied! +50 points.");
+  if (payload?.already_redeemed) return;
+  if (payload?.success) {
+    toast.success("Referral linked! Your referrer earns ₹100 when you check in to your hostel.");
   }
 }

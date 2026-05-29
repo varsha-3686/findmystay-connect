@@ -1,5 +1,6 @@
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeEmail } from "@/lib/otpAuth";
+import { isValidEmailInput, normalizeEmail } from "@/lib/otpAuth";
 
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -57,4 +58,63 @@ export async function sendPasswordReset(email: string) {
 
 export async function updatePassword(newPassword: string) {
   return supabase.auth.updateUser({ password: newPassword.trim() });
+}
+
+export function hasEmailPasswordIdentity(user: User | null | undefined): boolean {
+  if (!user) return false;
+  const providers = user.app_metadata?.providers as string[] | undefined;
+  if (Array.isArray(providers) && providers.includes("email")) return true;
+  if (user.identities?.some((identity) => identity.provider === "email")) return true;
+  return Boolean(user.email);
+}
+
+export function mapEmailChangeError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("reauthentication") || lower.includes("reauth")) {
+    return "Please enter your current password to change your email.";
+  }
+  if (lower.includes("already registered") || lower.includes("already been registered")) {
+    return "That email is already in use. Try a different address.";
+  }
+  if (lower.includes("validate email") || lower.includes("invalid email")) {
+    return "Please enter a valid email address.";
+  }
+  if (lower.includes("same") && lower.includes("email")) {
+    return "That is already your email address.";
+  }
+  return message;
+}
+
+export type EmailChangeResult = { ok: true } | { ok: false; message: string };
+
+export async function requestEmailChange(
+  newEmail: string,
+  options?: { currentPassword?: string; currentAuthEmail?: string }
+): Promise<EmailChangeResult> {
+  const normalized = normalizeEmail(newEmail);
+  if (!isValidEmailInput(normalized)) {
+    return { ok: false, message: "Please enter a valid email address." };
+  }
+
+  if (options?.currentPassword) {
+    const authEmail = options.currentAuthEmail?.trim();
+    if (!authEmail) {
+      return { ok: false, message: "Unable to verify your account. Please sign in again." };
+    }
+    const { error: signInError } = await signInWithEmailPassword(authEmail, options.currentPassword);
+    if (signInError) {
+      return { ok: false, message: mapEmailChangeError(signInError.message) };
+    }
+  }
+
+  const { error } = await supabase.auth.updateUser(
+    { email: normalized },
+    { emailRedirectTo: getAuthRedirectUrl() }
+  );
+
+  if (error) {
+    return { ok: false, message: mapEmailChangeError(error.message) };
+  }
+
+  return { ok: true };
 }
