@@ -27,7 +27,28 @@ supabase functions deploy complete-registration
 ### Auth settings
 
 - **Authentication → Email provider:** keep **Confirm email** enabled for email sign-up.
-- **Authentication → URL configuration:** include your app’s `/auth/callback` in redirect URLs.
+- **Authentication → URL configuration:** set Site URL to your production origin and add redirect URLs:
+  - `https://<your-domain>/auth/callback`
+  - `https://<your-domain>/auth/callback?type=recovery`
+  - Include localhost URLs for local dev (e.g. `http://localhost:8080/auth/callback`)
+- **Authentication → Email → SMTP (optional):** configure custom SMTP for reliable signup confirmation and password-reset emails.
+- Email templates should use `{{ .ConfirmationURL }}` (signup) and `{{ .ConfirmationURL }}` (recovery) so links return to `/auth/callback`.
+
+### Forgot password and signup confirmation
+
+The app uses PKCE auth flow. Password reset and signup confirmation links land on `/auth/callback`, which exchanges the `code` or waits for the session before continuing.
+
+**Test forgot password:** Login (email) → Forgot password → click reset link → set new password on callback page.
+
+**Test signup confirmation:** Sign up with email → check inbox → click confirm link → registration success screen. Use **Resend email** on the check-email screen if needed (uses `auth.resend`, not a second sign-up).
+
+## Admin referrals and wallets
+
+Run in **Supabase SQL Editor**:
+
+- `supabase/migrations/20260430100000_admin_referrals_wallet_read.sql` — lets admins read all referral rows and wallet balances
+
+Then open **Admin → Referrals & Wallets** to view referral workflow status and referrer wallet amounts.
 
 ### Test flows
 

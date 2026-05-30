@@ -74,6 +74,10 @@ import {
 
   signUpWithEmailPassword,
 
+  resendSignupConfirmation,
+
+  mapPasswordResetError,
+
   validatePassword,
 
   validatePasswordMatch,
@@ -397,25 +401,13 @@ const Signup = () => {
 
     try {
 
-      const pendingRole: RegistrationRole = selectedRole === "owner" ? "owner" : "user";
-
-      const { error } = await signUpWithEmailPassword({
-
-        email: emailNormalized,
-
-        password,
-
-        fullName: fullName.trim(),
-
-        pendingRole,
-
-      });
+      const { error } = await resendSignupConfirmation(emailNormalized);
 
 
 
       if (error) {
 
-        toast.error(error.message);
+        toast.error(mapPasswordResetError(error.message));
 
       } else {
 

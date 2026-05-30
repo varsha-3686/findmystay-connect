@@ -14,6 +14,7 @@ import {
   validatePassword,
   validatePasswordMatch,
   MIN_PASSWORD_LENGTH,
+  establishSessionFromAuthUrl,
 } from "@/lib/authEmail";
 import { navigateAfterAuth } from "@/lib/authRedirect";
 import {
@@ -53,20 +54,22 @@ const AuthCallback = () => {
   const [submitting, setSubmitting] = useState(false);
   const handledRef = useRef(false);
 
-  const isRecovery = searchParams.get("type") === "recovery";
+  const isRecoveryQuery = searchParams.get("type") === "recovery";
 
   useEffect(() => {
     if (handledRef.current) return;
     handledRef.current = true;
 
     (async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { session, event } = await establishSessionFromAuthUrl(searchParams);
 
-      if (error || !session?.user) {
+      if (!session?.user) {
         setStatus("error");
         setErrorMessage("Invalid or expired link. Please try signing in again.");
         return;
       }
+
+      const isRecovery = isRecoveryQuery || event === "PASSWORD_RECOVERY";
 
       if (isRecovery) {
         setStatus("recovery");
@@ -131,7 +134,7 @@ const AuthCallback = () => {
 
       await navigateWithFreshRoles(navigate, session.user.id);
     })();
-  }, [isRecovery, navigate, refreshRoles]);
+  }, [isRecoveryQuery, navigate, refreshRoles, searchParams]);
 
   const handleSetNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();

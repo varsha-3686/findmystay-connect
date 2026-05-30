@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import {
   BarChart3, BadgeCheck, Users, AlertTriangle,
-  MessageSquare, Building2, ShieldCheck, Activity, ShirtIcon, User
+  MessageSquare, Building2, ShieldCheck, Activity, ShirtIcon, User, Gift
 } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -13,6 +13,7 @@ import AdminMediaVerification from "@/components/AdminMediaVerification";
 import AdminHostelApprovals from "@/components/admin/AdminHostelApprovals";
 import AdminActivityMonitor from "@/components/admin/AdminActivityMonitor";
 import AdminLaundry from "@/components/admin/AdminLaundry";
+import AdminReferrals from "@/components/admin/AdminReferrals";
 import UserProfile from "@/components/user/UserProfile";
 
 const sidebarGroups = [
@@ -28,6 +29,7 @@ const sidebarGroups = [
     items: [
       { title: "Hostel Approvals", url: "/admin/approvals", icon: BadgeCheck },
       { title: "Users", url: "/admin/users", icon: Users },
+      { title: "Referrals & Wallets", url: "/admin/referrals", icon: Gift },
       { title: "Fraud Alerts & Complaints", url: "/admin/fraud", icon: AlertTriangle },
       { title: "Reviews", url: "/admin/reviews", icon: MessageSquare },
       { title: "Media Verification", url: "/admin/media", icon: Building2 },
@@ -60,6 +62,7 @@ const AdminDashboard = () => {
           <Route path="activity" element={<AdminActivityMonitor />} />
           <Route path="approvals" element={<AdminHostelApprovals />} />
           <Route path="users" element={<AdminUserManagement />} />
+          <Route path="referrals" element={<AdminReferrals />} />
           <Route path="fraud" element={<AdminFraudAlerts />} />
           <Route path="reviews" element={<AdminReviewModeration />} />
           <Route path="media" element={<AdminMediaVerification />} />

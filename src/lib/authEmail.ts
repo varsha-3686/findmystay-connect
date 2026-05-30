@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidEmailInput, normalizeEmail } from "@/lib/otpAuth";
 
@@ -53,6 +53,83 @@ export async function signUpWithEmailPassword(options: {
 export async function sendPasswordReset(email: string) {
   return supabase.auth.resetPasswordForEmail(normalizeEmail(email), {
     redirectTo: getAuthRedirectUrl("recovery"),
+  });
+}
+
+export async function resendSignupConfirmation(email: string) {
+  return supabase.auth.resend({
+    type: "signup",
+    email: normalizeEmail(email),
+    options: { emailRedirectTo: getAuthRedirectUrl() },
+  });
+}
+
+export function mapPasswordResetError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return "Too many requests. Please wait a few minutes and try again.";
+  }
+  if (lower.includes("already registered") || lower.includes("already been registered")) {
+    return "This email is already verified. Try signing in instead.";
+  }
+  if (lower.includes("validate email") || lower.includes("invalid email")) {
+    return "Please enter a valid email address.";
+  }
+  return message;
+}
+
+export type AuthUrlSessionResult = {
+  session: Session | null;
+  event: AuthChangeEvent | null;
+};
+
+export async function establishSessionFromAuthUrl(
+  searchParams: URLSearchParams,
+  timeoutMs = 8000
+): Promise<AuthUrlSessionResult> {
+  const code = searchParams.get("code");
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.session) {
+      return { session: data.session, event: "SIGNED_IN" };
+    }
+  }
+
+  const { data: { session: existingSession } } = await supabase.auth.getSession();
+  if (existingSession) {
+    return { session: existingSession, event: null };
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (session: Session | null, event: AuthChangeEvent | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      subscription.unsubscribe();
+      resolve({ session, event });
+    };
+
+    const timer = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      finish(session, null);
+    }, timeoutMs);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        session &&
+        (event === "INITIAL_SESSION" ||
+          event === "SIGNED_IN" ||
+          event === "PASSWORD_RECOVERY" ||
+          event === "TOKEN_REFRESHED")
+      ) {
+        finish(session, event);
+        return;
+      }
+      if (event === "INITIAL_SESSION" && !session) {
+        finish(null, event);
+      }
+    });
   });
 }
 

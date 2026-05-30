@@ -21,9 +21,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PhoneCountryInput } from "@/components/auth/PhoneCountryInput";
 import { DEFAULT_DIAL_CODE } from "@/lib/phoneCountries";
 import { cn } from "@/lib/utils";
-import { composePhoneE164 } from "@/lib/otpAuth";
+import { composePhoneE164, isValidEmailInput } from "@/lib/otpAuth";
 import { stashReferralCodeFromUrl, applyPendingReferralCode } from "@/lib/pendingReferral";
-import { signInWithEmailPassword, sendPasswordReset } from "@/lib/authEmail";
+import { signInWithEmailPassword, sendPasswordReset, mapPasswordResetError } from "@/lib/authEmail";
 import { navigateAfterAuth } from "@/lib/authRedirect";
 
 type AuthStep = "contact" | "otp";
@@ -133,12 +133,16 @@ const Login = () => {
       toast.error("Enter your email address first.");
       return;
     }
+    if (!isValidEmailInput(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const { error } = await sendPasswordReset(email);
       if (error) {
-        toast.error(error.message);
+        toast.error(mapPasswordResetError(error.message));
       } else {
         toast.success("Password reset link sent. Check your email.");
       }
